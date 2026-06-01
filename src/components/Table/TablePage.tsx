@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useGameSync } from '../../hooks/useGameSync'
 import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
@@ -16,13 +16,35 @@ export function TablePage() {
   const { game, isHost, setRoomCode } = useGameStore()
   const { user } = useAuthStore()
   const { submitAction, submitBet } = useGameSync()
+  const navigate = useNavigate()
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
     if (paramCode) setRoomCode(paramCode.toUpperCase())
   }, [paramCode, setRoomCode])
 
-  if (!game) return <div className="text-white p-8 text-center">Loading game...</div>
-  if (!user) return <div className="text-white p-8 text-center">Connecting...</div>
+  useEffect(() => {
+    if (game === null && paramCode) {
+      const timer = setTimeout(() => setNotFound(true), 3000)
+      return () => clearTimeout(timer)
+    } else {
+      setNotFound(false)
+    }
+  }, [game, paramCode])
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-gray-400">Game not found or has ended.</p>
+          <Button onClick={() => navigate('/')}>Back to Lobby</Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!game) return <div className="min-h-screen flex items-center justify-center"><p className="text-white text-lg">Loading game...</p></div>
+  if (!user) return <div className="min-h-screen flex items-center justify-center"><p className="text-white text-lg">Connecting...</p></div>
 
   const localPlayer = game.players.find((p) => p.id === user.uid)
   const isBetting = game.phase === 'betting'

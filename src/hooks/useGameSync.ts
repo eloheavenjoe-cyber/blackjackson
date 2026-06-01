@@ -13,7 +13,7 @@ export function useGameSync() {
   useEffect(() => {
     if (!roomCode) return
     const unsub = subscribeToGame(roomCode, (updated) => {
-      if (updated) setGame(updated)
+      setGame(updated)
     })
     return () => unsub()
   }, [roomCode, setGame])
