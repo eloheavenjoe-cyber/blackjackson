@@ -1,7 +1,7 @@
 export * from './types'
 export { evaluateHand, calculateHandValue } from './hand'
 export { createShoe, drawCard, needsReshuffle, reshuffleDiscard } from './shoe'
-export { createGame, addPlayer, removePlayer, startGame, setPlayerBet, allBetsPlaced } from './game'
+export { createGame, addPlayer, removePlayer, startGame, setPlayerBet, allBetsPlaced, startNewRound } from './game'
 export { dealInitialHands } from './dealing'
 export { processAction } from './actions'
 export { playDealer } from './dealer'

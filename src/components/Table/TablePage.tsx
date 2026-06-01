@@ -9,7 +9,7 @@ import { PlayerPosition } from './PlayerPosition'
 import { RoundResult } from './RoundResult'
 import { Button } from '../Shared/Button'
 import { updateGameDoc } from '../../firebase/games'
-import { dealInitialHands, allBetsPlaced } from '../../engine'
+import { dealInitialHands, allBetsPlaced, startNewRound } from '../../engine'
 
 export function TablePage() {
   const { roomCode: paramCode } = useParams<{ roomCode: string }>()
@@ -83,6 +83,15 @@ export function TablePage() {
         {isBetting && allBet && isHost && (
           <div className="flex justify-center pb-4">
             <Button onClick={handleStartRound}>Deal Cards</Button>
+          </div>
+        )}
+
+        {game.phase === 'round_end' && isHost && (
+          <div className="flex justify-center pb-4">
+            <Button onClick={async () => {
+              const next = startNewRound(game)
+              await updateGameDoc(game.id, { ...next, shoe: next.shoe as any, players: next.players })
+            }}>New Round</Button>
           </div>
         )}
       </div>

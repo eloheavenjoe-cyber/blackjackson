@@ -76,3 +76,23 @@ export function setPlayerBet(
 export function allBetsPlaced(state: GameState): boolean {
   return state.players.every((p) => p.hands.length > 0 && p.hands[0].bet > 0)
 }
+
+export function startNewRound(state: GameState): GameState {
+  return {
+    ...state,
+    phase: 'betting',
+    roundNumber: state.roundNumber + 1,
+    dealerHand: [],
+    dealerHoleCard: null,
+    currentTurn: -1,
+    turnStartedAt: null,
+    discard: [...state.discard, ...state.dealerHand, ...state.players.flatMap((p) => p.hands.flatMap((h) => h.cards))],
+    players: state.players.map((p) => ({
+      ...p,
+      hands: [],
+      activeHandIndex: 0,
+      isActive: true,
+      insuranceBet: 0,
+    })),
+  }
+}

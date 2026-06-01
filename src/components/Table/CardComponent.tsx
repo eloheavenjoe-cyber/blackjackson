@@ -9,7 +9,7 @@ type Props = {
 }
 
 const suitSymbols: Record<string, string> = { S: '\u2660', H: '\u2665', D: '\u2666', C: '\u2663' }
-const suitColors: Record<string, string> = { S: 'text-white', H: 'text-red-400', D: 'text-red-400', C: 'text-white' }
+const suitColors: Record<string, string> = { S: 'text-gray-900', H: 'text-red-600', D: 'text-red-600', C: 'text-gray-900' }
 
 const sizeClasses = {
   sm: 'w-12 h-18',
