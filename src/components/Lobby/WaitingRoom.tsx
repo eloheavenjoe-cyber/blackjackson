@@ -40,25 +40,26 @@ export function WaitingRoom() {
     await updateGameDoc(game.id, { players: updated.players })
   }
 
-  async function copyLink() {
-    const url = `${window.location.origin}?code=${roomCode}`
-    await navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   if (!game) return null
 
   return (
     <div className="max-w-md mx-auto space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gold mb-2">Waiting Room</h2>
-        <div className="flex items-center justify-center gap-3">
-          <span className="text-4xl font-mono tracking-[0.3em] text-white">{roomCode}</span>
-          <button onClick={copyLink} className="text-sm text-gray-400 hover:text-gold transition-colors cursor-pointer">
-            {copied ? 'Copied!' : 'Copy link'}
+        <div className="flex items-center justify-center">
+          <button
+            onClick={async () => {
+              await navigator.clipboard.writeText(roomCode || '')
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2000)
+            }}
+            className="text-4xl font-mono tracking-[0.3em] text-white hover:text-gold transition-colors cursor-pointer"
+          >
+            {roomCode}
           </button>
         </div>
+        {copied && <p className="text-sm text-green-400 mt-1">Copied!</p>}
+        <p className="text-sm text-gray-500 mt-1">Click code to copy</p>
       </div>
       <div className="space-y-2">
         <h3 className="text-sm text-gray-400 uppercase tracking-wide">Players ({game.players.length}/6)</h3>
