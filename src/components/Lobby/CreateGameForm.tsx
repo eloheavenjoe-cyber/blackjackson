@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '../Shared/Button'
 import { RulesConfig } from './RulesConfig'
 import type { GameRules } from '../../engine/types'
-import { createGame } from '../../engine'
+import { createGame, addPlayer } from '../../engine'
 import { useAuthStore } from '../../stores/authStore'
 import { useGameStore } from '../../stores/gameStore'
 import { createGameDoc } from '../../firebase/games'
@@ -35,7 +35,17 @@ export function CreateGameForm() {
     if (!user) return
     setCreating(true)
     const code = generateRoomCode()
-    const game = createGame(code, user.uid, rules)
+    let game = createGame(code, user.uid, rules)
+    game = addPlayer(game, {
+      id: user.uid,
+      name: displayName,
+      seat: 0,
+      hands: [],
+      activeHandIndex: 0,
+      chips: rules.startingChips,
+      isActive: true,
+      insuranceBet: 0,
+    })
     await createGameDoc(game)
     setGame(game)
     setRoomCode(code)
