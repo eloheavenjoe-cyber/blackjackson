@@ -9,8 +9,6 @@ const s17Rules: GameRules = {
   splits: 'once', startingChips: 1000, minBet: 10, maxBet: 500,
   turnTimeLimit: 30,
 }
-const h17Rules: GameRules = { ...s17Rules, dealerSoft17: 'hit' }
-
 describe('playDealer', () => {
   it('dealer stands on 17 with S17 rule', () => {
     const state: GameState = {

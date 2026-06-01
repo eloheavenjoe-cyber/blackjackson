@@ -6,7 +6,7 @@ import { processAction, playDealer, settleHands, dealInitialHands, setPlayerBet,
 import type { PlayerAction } from '../engine/types'
 
 export function useGameSync() {
-  const { game, setGame, roomCode, isHost } = useGameStore()
+  const { game, setGame, roomCode } = useGameStore()
   const { user } = useAuthStore()
 
   useEffect(() => {

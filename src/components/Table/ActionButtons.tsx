@@ -1,5 +1,4 @@
 import type { HandState } from '../../engine/types'
-import { evaluateHand } from '../../engine'
 
 type Props = {
   hand: HandState

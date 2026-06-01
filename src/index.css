@@ -12,7 +12,18 @@
   --color-chip-white: #ecf0f1;
 }
 
-body {
-  @apply bg-gray-950 text-white antialiased;
-  font-family: 'Inter', system-ui, sans-serif;
+@layer base {
+  body {
+    @apply bg-gray-950 text-white antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+}
+
+@utility text-shadow-glow {
+  text-shadow: 0 0 10px rgba(212, 168, 67, 0.5);
 }

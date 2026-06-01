@@ -10,7 +10,6 @@ type Props = {
 }
 
 export function DealerArea({ dealerHand, showHoleCard, phase }: Props) {
-  const visibleCards = showHoleCard ? dealerHand : dealerHand.slice(0, 1)
   const ev = dealerHand.length > 0 ? evaluateHand(showHoleCard ? dealerHand : [dealerHand[0]]) : null
 
   return (

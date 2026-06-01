@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Card, Suit, Rank, GamePhase, GameRules, PlayerState, HandState, GameState } from '../types'
+import type { Card, GameRules } from '../types'
 
 describe('Card type', () => {
   it('accepts valid card', () => {

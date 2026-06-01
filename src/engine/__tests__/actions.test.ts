@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { processAction } from '../actions'
 import { dealInitialHands } from '../dealing'
 import { createGame, addPlayer, startGame, setPlayerBet } from '../game'
-import { evaluateHand, calculateHandValue } from '../hand'
-import type { GameRules, PlayerState } from '../types'
+import type { GameRules } from '../types'
 
 const rules: GameRules = {
   decks: 6, dealerSoft17: 'stand', blackjackPayout: '3:2',
