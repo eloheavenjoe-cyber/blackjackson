@@ -47,4 +47,23 @@ describe('settleHands', () => {
     expect(result.players[0].hands[0].result).toBe('blackjack')
     expect(result.players[0].chips).toBe(1075) // 950 existing + 50 bet returned + 75 winnings
   })
+
+  it('player loses chips when dealer wins', () => {
+    const state: GameState = {
+      id: 'T1', phase: 'settlement', hostId: 'host', rules,
+      shoe: [], discard: [],
+      dealerHand: [{ suit: 'H', rank: 'K' }, { suit: 'D', rank: '9' }],
+      dealerHoleCard: null,
+      players: [{
+        id: 'p1', name: 'Alice', seat: 0,
+        hands: [{ cards: [{ suit: 'S', rank: '8' }, { suit: 'C', rank: '9' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
+        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0,
+      }],
+      currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
+      roundNumber: 1, createdAt: Date.now(),
+    }
+    const result = settleHands(state)
+    expect(result.players[0].hands[0].result).toBe('lose')
+    expect(result.players[0].chips).toBe(950) // lost the 50 bet
+  })
 })

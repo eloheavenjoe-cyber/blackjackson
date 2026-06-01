@@ -26,9 +26,9 @@ const textSizes = {
 export function CardComponent({ card, faceDown, size = 'md', delay = 0 }: Props) {
   return (
     <motion.div
-      initial={{ x: -40, y: -200, rotate: -10, opacity: 0 }}
+      initial={{ x: -60, y: -300, rotate: -15, opacity: 0 }}
       animate={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
-      transition={{ duration: 0.4, delay, type: 'spring', stiffness: 200 }}
+      transition={{ duration: 0.6, delay, type: 'spring', stiffness: 120, damping: 14 }}
       className={`${sizeClasses[size]} rounded-lg shadow-xl flex-shrink-0 ${
         faceDown || !card ? 'bg-blue-800' : 'bg-white'
       }`}

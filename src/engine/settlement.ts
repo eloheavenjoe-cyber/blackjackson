@@ -39,7 +39,11 @@ export function settleHands(state: GameState): GameState {
       }
 
       const payout = payoutMult === 0 ? 0 : Math.floor(hand.bet * payoutMult)
-      totalPayout += hand.bet + payout
+      if (result === 'lose') {
+        totalPayout += 0
+      } else {
+        totalPayout += hand.bet + payout
+      }
       return { ...hand, result, payout }
     })
 

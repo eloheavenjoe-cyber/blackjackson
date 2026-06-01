@@ -15,7 +15,7 @@ export function CardHand({ hand, handIndex, activeHandIndex }: Props) {
     <div className={`flex flex-col items-center gap-1 ${!isActive ? 'opacity-60' : ''}`}>
       <div className="flex -space-x-3">
         {hand.cards.map((card, i) => (
-          <CardComponent key={`${card.suit}${card.rank}-${i}`} card={card} size="sm" delay={i * 0.1} />
+          <CardComponent key={`${card.suit}${card.rank}-${i}`} card={card} size="sm" delay={i * 0.2} />
         ))}
       </div>
       <div className="text-xs font-mono mt-1">

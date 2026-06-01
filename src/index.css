@@ -21,6 +21,8 @@
   * {
     scrollbar-width: thin;
     scrollbar-color: #333 transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 
