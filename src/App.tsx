@@ -1,9 +1,48 @@
-function App() {
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuthStore } from './stores/authStore'
+import { LobbyPage } from './components/Lobby/LobbyPage'
+import { TablePage } from './components/Table/TablePage'
+
+function AutoJoin() {
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const { setDisplayName } = useAuthStore()
+
+  useEffect(() => {
+    const code = params.get('code')
+    if (code) {
+      setDisplayName('Player')
+      navigate(`/table/${code}`)
+    }
+  }, [])
+
+  return null
+}
+
+function AppRoutes() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <h1 className="text-4xl font-bold text-gold">Blackjackson</h1>
-    </div>
+    <>
+      <AutoJoin />
+      <Routes>
+        <Route path="/" element={<LobbyPage />} />
+        <Route path="/table/:roomCode" element={<TablePage />} />
+      </Routes>
+    </>
   )
 }
 
-export default App
+export default function App() {
+  const { initialize } = useAuthStore()
+
+  useEffect(() => {
+    const unsub = initialize()
+    return () => unsub()
+  }, [initialize])
+
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  )
+}
