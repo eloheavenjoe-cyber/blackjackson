@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import { useGameSync } from '../../hooks/useGameSync'
 import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
@@ -10,9 +12,14 @@ import { updateGameDoc } from '../../firebase/games'
 import { dealInitialHands, allBetsPlaced } from '../../engine'
 
 export function TablePage() {
-  const { game, isHost } = useGameStore()
+  const { roomCode: paramCode } = useParams<{ roomCode: string }>()
+  const { game, isHost, setRoomCode } = useGameStore()
   const { user } = useAuthStore()
   const { submitAction, submitBet } = useGameSync()
+
+  useEffect(() => {
+    if (paramCode) setRoomCode(paramCode.toUpperCase())
+  }, [paramCode, setRoomCode])
 
   if (!game) return <div className="text-white p-8 text-center">Loading game...</div>
   if (!user) return <div className="text-white p-8 text-center">Connecting...</div>

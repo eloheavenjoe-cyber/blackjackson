@@ -1,31 +1,37 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../Shared/Button'
 import { PlayerAvatar } from '../Shared/PlayerAvatar'
 import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
-import { useUIStore } from '../../stores/uiStore'
 import { subscribeToGame, updateGameDoc } from '../../firebase/games'
 import { startGame, removePlayer } from '../../engine'
 
 export function WaitingRoom() {
   const { game, roomCode, isHost, setGame } = useGameStore()
   const { user } = useAuthStore()
-  const { setView } = useUIStore()
   const [copied, setCopied] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!roomCode) return
     const unsub = subscribeToGame(roomCode, (updated) => {
-      if (updated) setGame(updated)
+      if (updated) {
+        setGame(updated)
+        if (updated.phase !== 'waiting') {
+          navigate(`/table/${roomCode}`)
+        }
+      }
     })
     return () => unsub()
-  }, [roomCode, setGame])
+  }, [roomCode, setGame, navigate])
 
   async function handleStart() {
     if (!game || !isHost) return
     const updated = startGame(game)
     await updateGameDoc(game.id, { ...updated, shoe: updated.shoe as any, players: updated.players })
-    setView('table')
+    setGame(updated)
+    navigate(`/table/${roomCode}`)
   }
 
   async function handleKick(playerId: string) {
