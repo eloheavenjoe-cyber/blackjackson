@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
-  projectId: "REPLACE_WITH_YOUR_PROJECT",
-  storageBucket: "REPLACE_WITH_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:abc123",
+  apiKey: "AIzaSyDB71ns_pEDOPI_ocJhpw9sSHOUDdqOCWU",
+  authDomain: "blackjackson-48cdc.firebaseapp.com",
+  projectId: "blackjackson-48cdc",
+  storageBucket: "blackjackson-48cdc.firebasestorage.app",
+  messagingSenderId: "390050454919",
+  appId: "1:390050454919:web:6b3a2a703d1b1615860722",
 }
 
 const app = initializeApp(firebaseConfig)
