@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-felt: #0d5e2e;
+  --color-felt-dark: #094a24;
+  --color-gold: #d4a843;
+  --color-gold-light: #f0d68a;
+  --color-chip-red: #c0392b;
+  --color-chip-blue: #2980b9;
+  --color-chip-green: #27ae60;
+  --color-chip-black: #1a1a1a;
+  --color-chip-white: #ecf0f1;
+}
+
+body {
+  @apply bg-gray-950 text-white antialiased;
+  font-family: 'Inter', system-ui, sans-serif;
+}
