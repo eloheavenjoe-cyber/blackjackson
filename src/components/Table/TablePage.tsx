@@ -18,7 +18,7 @@ export function TablePage() {
   const { game, isHost, setRoomCode, reset: resetGame } = useGameStore()
   const { user } = useAuthStore()
   const { setView } = useUIStore()
-  const { submitAction, submitBet } = useGameSync()
+  const { submitAction, submitBet, scheduleNewRound } = useGameSync()
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
@@ -103,6 +103,7 @@ export function TablePage() {
     if (dealt.phase === 'settlement') {
       const settled = settleInsurance(settleHands(dealt))
       await updateGameDoc(game.id, { ...settled, shoe: settled.shoe as any, players: settled.players })
+      scheduleNewRound()
       return
     }
     await updateGameDoc(game.id, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
@@ -193,13 +194,13 @@ export function TablePage() {
         )}
 
         {isBetting && allBet && isHost && (
-          <div className="flex justify-center pb-4 relative z-10">
+          <div className="absolute bottom-4 right-4 z-20">
             <Button onClick={handleStartRound}>Deal Cards</Button>
           </div>
         )}
 
         {game.phase === 'round_end' && !game.gameOver && isHost && (
-          <div className="flex justify-center pb-4 relative z-10">
+          <div className="absolute bottom-4 right-4 z-20">
             <Button onClick={async () => {
               const next = startNewRound(game)
               await updateGameDoc(game.id, { ...next, shoe: next.shoe as any, players: next.players })

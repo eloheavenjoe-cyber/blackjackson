@@ -5,7 +5,7 @@ import { subscribeToGame, updateGameDoc, submitBetIntent } from '../firebase/gam
 import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
 import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import type { PlayerAction } from '../engine/types'
+import type { PlayerAction, GameState } from '../engine/types'
 
 export function useGameSync() {
   const { game, setGame, roomCode, isHost } = useGameStore()
@@ -33,14 +33,9 @@ export function useGameSync() {
             let updated = setPlayerBet(current, data.playerId, data.amount)
             await updateGameDoc(roomCode, { players: updated.players })
             if (allBetsPlaced(updated)) {
-              let dealt = dealInitialHands(updated)
-              if (dealt.phase === 'settlement') {
-                const settled = settleInsurance(settleHands(dealt))
-                await updateGameDoc(roomCode, { ...settled, shoe: settled.shoe as any, players: settled.players })
-                scheduleNewRound()
-              } else {
-                await updateGameDoc(roomCode, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
-              }
+              const dealt = dealInitialHands(updated)
+              const finalized = finalizeState(dealt)
+              await writeAndSchedule(finalized)
             }
           } catch (e) {
             // Ignore duplicate/invalid bets
@@ -68,27 +63,28 @@ export function useGameSync() {
     const timer = setTimeout(async () => {
       const current = useGameStore.getState().game
       if (!current || current.phase !== 'playing' || current.currentTurn !== game.currentTurn) return
-      const updated = processAction(current, { type: 'stand', playerId: currentPlayer.id })
+      let updated = processAction(current, { type: 'stand', playerId: currentPlayer.id })
 
       const timeoutKey = currentPlayer.id + '_timeouts'
       const prevTimeouts = (current.lastActionAt?.[timeoutKey] as number) || 0
       const newTimeouts = prevTimeouts + 1
-      const lastActionPatch = {
-        lastActionAt: { ...current.lastActionAt, [timeoutKey]: newTimeouts }
-      }
 
       if (newTimeouts >= 2) {
-        const marked = {
+        updated = {
           ...updated,
           players: updated.players.map((p: any) =>
             p.id === currentPlayer.id ? { ...p, isActive: false } : p
           ),
-          ...lastActionPatch,
         }
-        await updateGameDoc(current.id, { ...marked, shoe: marked.shoe as any, players: marked.players })
-      } else {
-        await updateGameDoc(current.id, { ...updated, ...lastActionPatch, shoe: updated.shoe as any, players: updated.players })
       }
+
+      updated = {
+        ...updated,
+        lastActionAt: { ...updated.lastActionAt, [timeoutKey]: newTimeouts },
+      }
+
+      const finalized = finalizeState(updated)
+      await writeAndSchedule(finalized)
     }, remaining)
 
     return () => clearTimeout(timer)
@@ -100,18 +96,29 @@ export function useGameSync() {
     }
   }, [])
 
+  function finalizeState(state: GameState): GameState {
+    if (state.phase === 'dealer') {
+      return settleInsurance(settleHands(playDealer(state)))
+    }
+    if (state.phase === 'settlement') {
+      return settleInsurance(settleHands(state))
+    }
+    return state
+  }
+
+  async function writeAndSchedule(state: GameState) {
+    const gameId = state.id
+    await updateGameDoc(gameId, { ...state, shoe: state.shoe as any, players: state.players })
+    if (state.phase === 'round_end') {
+      scheduleNewRound()
+    }
+  }
+
   async function submitAction(action: PlayerAction) {
     if (!game || !user) return
     const updated = processAction(game, { ...action, playerId: user.uid })
-
-    if (updated.phase === 'dealer') {
-      const afterDealer = playDealer(updated)
-      const settled = settleInsurance(settleHands(afterDealer))
-      await updateGameDoc(game.id, { ...settled, shoe: settled.shoe as any, players: settled.players })
-      scheduleNewRound()
-    } else {
-      await updateGameDoc(game.id, { ...updated, shoe: updated.shoe as any, players: updated.players })
-    }
+    const finalized = finalizeState(updated)
+    await writeAndSchedule(finalized)
   }
 
   async function submitBet(playerId: string, amount: number) {
@@ -131,5 +138,5 @@ export function useGameSync() {
     }, 5000)
   }
 
-  return { submitAction, submitBet }
+  return { submitAction, submitBet, scheduleNewRound }
 }
