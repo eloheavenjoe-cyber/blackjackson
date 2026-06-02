@@ -5,4 +5,4 @@ export { createGame, addPlayer, removePlayer, startGame, setPlayerBet, allBetsPl
 export { dealInitialHands } from './dealing'
 export { processAction, allInsuranceDecided, resolveInsurance } from './actions'
 export { playDealer } from './dealer'
-export { settleHands } from './settlement'
+export { settleHands, settleInsurance } from './settlement'

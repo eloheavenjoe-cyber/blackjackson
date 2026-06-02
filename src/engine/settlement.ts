@@ -52,3 +52,17 @@ export function settleHands(state: GameState): GameState {
 
   return { ...state, players, phase: 'round_end' }
 }
+
+export function settleInsurance(state: GameState): GameState {
+  const dealerEval = evaluateHand(state.dealerHand)
+  if (!dealerEval.isBlackjack) return state
+
+  const players = state.players.map((player) => {
+    if (player.insuranceBet > 0) {
+      return { ...player, chips: player.chips + player.insuranceBet, insuranceBet: 0 }
+    }
+    return { ...player, insuranceBet: 0 }
+  })
+
+  return { ...state, players }
+}

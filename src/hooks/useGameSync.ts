@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
 import { subscribeToGame, updateGameDoc } from '../firebase/games'
-import { processAction, playDealer, settleHands, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
+import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
 import type { PlayerAction } from '../engine/types'
 
 export function useGameSync() {
@@ -30,7 +30,7 @@ export function useGameSync() {
 
     if (updated.phase === 'dealer') {
       const afterDealer = playDealer(updated)
-      const settled = settleHands(afterDealer)
+      const settled = settleInsurance(settleHands(afterDealer))
       await updateGameDoc(game.id, { ...settled, shoe: settled.shoe as any, players: settled.players })
       scheduleNewRound()
     } else {

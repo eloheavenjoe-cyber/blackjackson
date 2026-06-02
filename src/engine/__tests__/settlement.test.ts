@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { settleHands } from '../settlement'
+import { settleHands, settleInsurance } from '../settlement'
 import type { GameState, GameRules } from '../types'
 
 const rules: GameRules = {
@@ -126,5 +126,24 @@ describe('settleHands', () => {
     expect(result.players[0].hands[0].result).toBe('win')
     expect(result.players[0].hands[1].result).toBe('lose')
     expect(result.players[0].chips).toBe(1000) // 900 + 100(hand0 win) + 0(hand1 loss) = 1000
+  })
+
+  it('insurance pays 2:1 when dealer has blackjack', () => {
+    const state: GameState = {
+      id: 'T1', phase: 'settlement', hostId: 'host', rules: { ...rules, insurance: true },
+      shoe: [], discard: [],
+      dealerHand: [{ suit: 'H', rank: 'A' }, { suit: 'D', rank: 'K' }],
+      dealerHoleCard: null,
+      players: [{
+        id: 'p1', name: 'Alice', seat: 0,
+        hands: [{ cards: [{ suit: 'S', rank: '9' }, { suit: 'C', rank: '8' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
+        activeHandIndex: 0, chips: 925, isActive: true, insuranceBet: 25, insuranceDecided: false,
+      }],
+      currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
+      roundNumber: 1, createdAt: Date.now(),
+    }
+    const settled = settleHands(state)
+    const insured = settleInsurance(settled)
+    expect(insured.players[0].chips).toBe(950)
   })
 })
