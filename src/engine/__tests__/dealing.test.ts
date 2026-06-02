@@ -13,7 +13,7 @@ const defaultRules: GameRules = {
 function makePlayer(id: string, name: string): PlayerState {
   return {
     id, name, seat: 0, hands: [],
-    activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0,
+    activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false,
   }
 }
 

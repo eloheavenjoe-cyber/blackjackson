@@ -50,7 +50,6 @@ export function dealInitialHands(state: GameState): GameState {
   }
 
   const dealerUpcard = currentState.dealerHand[0]
-  const dealerHole = currentState.dealerHand[1]
   const dealerEval = evaluateHand(currentState.dealerHand)
   const dealerBJ = dealerEval.isBlackjack
 

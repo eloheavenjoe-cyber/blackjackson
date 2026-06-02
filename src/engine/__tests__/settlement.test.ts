@@ -19,7 +19,7 @@ describe('settleHands', () => {
       players: [{
         id: 'p1', name: 'Alice', seat: 0,
         hands: [{ cards: [{ suit: 'S', rank: 'K' }, { suit: 'C', rank: '8' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
-        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0, insuranceDecided: false,
       }],
       currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
       roundNumber: 1, createdAt: Date.now(),
@@ -38,7 +38,7 @@ describe('settleHands', () => {
       players: [{
         id: 'p1', name: 'Alice', seat: 0,
         hands: [{ cards: [{ suit: 'S', rank: 'A' }, { suit: 'C', rank: 'K' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
-        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0, insuranceDecided: false,
       }],
       currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
       roundNumber: 1, createdAt: Date.now(),
@@ -57,7 +57,7 @@ describe('settleHands', () => {
       players: [{
         id: 'p1', name: 'Alice', seat: 0,
         hands: [{ cards: [{ suit: 'S', rank: '8' }, { suit: 'C', rank: '9' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
-        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 950, isActive: true, insuranceBet: 0, insuranceDecided: false,
       }],
       currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
       roundNumber: 1, createdAt: Date.now(),
@@ -76,7 +76,7 @@ describe('settleHands', () => {
       players: [{
         id: 'p1', name: 'Alice', seat: 0,
         hands: [{ cards: [{ suit: 'S', rank: 'K' }, { suit: 'C', rank: '8' }], bet: 100, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
-        activeHandIndex: 0, chips: 900, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 900, isActive: true, insuranceBet: 0, insuranceDecided: false,
       }],
       currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
       roundNumber: 1, createdAt: Date.now(),
@@ -95,7 +95,7 @@ describe('settleHands', () => {
       players: [{
         id: 'p1', name: 'Alice', seat: 0,
         hands: [{ cards: [{ suit: 'S', rank: 'K' }, { suit: 'C', rank: '8' }, { suit: 'D', rank: '2' }], bet: 100, isDoubled: true, isSurrendered: false, isStood: true, result: 'pending', payout: 0 }],
-        activeHandIndex: 0, chips: 800, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 800, isActive: true, insuranceBet: 0, insuranceDecided: false,
       }],
       currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
       roundNumber: 1, createdAt: Date.now(),
@@ -117,7 +117,7 @@ describe('settleHands', () => {
           { cards: [{ suit: 'S', rank: 'K' }, { suit: 'C', rank: '8' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 },
           { cards: [{ suit: 'S', rank: '3' }, { suit: 'C', rank: '9' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: true, result: 'pending', payout: 0 },
         ],
-        activeHandIndex: 0, chips: 900, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 900, isActive: true, insuranceBet: 0, insuranceDecided: false,
       }],
       currentTurn: -1, turnTimeLimit: 0, turnStartedAt: null,
       roundNumber: 1, createdAt: Date.now(),

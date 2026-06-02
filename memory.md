@@ -59,7 +59,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 ## Test Coverage
 
-36 tests across 8 files in `src/engine/__tests__/`:
+51 tests across 8 files in `src/engine/__tests__/`:
 - `types.test.ts` — Type definitions
 - `hand.test.ts` — Hand evaluation (blackjack, soft, hard, bust, multiple aces)
 - `shoe.test.ts` — Shoe creation, draw, reshuffle threshold
@@ -71,17 +71,32 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 Tests pass: `npx vitest run`
 
-## Known Issues / TODOs
+## Bugs Fixed (2026-06-02)
 
-1. **Concurrency** — Multiple players betting simultaneously can overwrite each other (updates whole players array). Should use transactions or subcollections for player actions.
-2. **Double down rules** — Engine doesn't enforce `doubleDown` config (`9-10-11` / `none`), only checks card count
-3. **Insurance flow** — Insurance phase transitions but no UI for accepting/rejecting insurance
-4. **Surrender button** — Not shown in UI even when surrender rules allow it
-5. **Split 10-value pairs** — ActionButtons checks raw rank equality (8==8), not value equality (K==Q), so pairs like K+Q can't split from UI. Engine handles correctly.
-6. **Turn timer auto-stand** — Timer counts down visually but doesn't auto-stand when expired (only host processes actions)
-7. **Player disconnect** — No handling for players leaving mid-game
-8. **0-chip players** — Can stay in game but can't bet; no removal logic
-9. **Mobile layout** — Works but could use more responsive polish for small screens
+1. ~~**Concurrency**~~ — Fixed: Two-phase bet submission via `games/{code}/bets/{playerId}` subcollection. Only host writes authoritative game doc.
+2. ~~**Double down rules**~~ — Fixed: Engine checks `rules.doubleDown` (`none`/`9-10-11`/`any`) and UI gates button visibility.
+3. ~~**Insurance flow**~~ — Fixed: Full engine handling (`insurance_yes`/`insurance_no` + `resolveInsurance`) + UI insurance prompt.
+4. ~~**Surrender button**~~ — Fixed: ActionButtons shows surrender when `rules.surrender === 'late'` + first-action guard.
+5. ~~**Split 10-value pairs**~~ — Fixed: Uses `calculateHandValue` for value comparison instead of rank string equality.
+6. ~~**Turn timer auto-stand**~~ — Fixed: `onTimeout` callback auto-submits stand action. Host enforces timer. Inactive after 2 timeouts.
+7. **Player disconnect** — Partially fixed: `lastActionAt` tracking, `isActive=false` after 2 timeouts, "Away" badge, skipped in turn logic. Full presence system still needs backend.
+8. ~~**0-chip players**~~ — Fixed: `startNewRound` removes 0-chip players with `removedPlayers` tracking + `gameOver` when all bust.
+9. ~~**Mobile layout**~~ — Skipped (excluded from scope).
+
+## Additional Fixes
+- **Round result labels** — Now shows per-hand results; "BUST" only for actual busts, "LOSE" otherwise, "SURRENDER" label.
+- **Dealer Ace-up BJ** — Now detected even when insurance is off; goes straight to settlement.
+- **Split hand navigation** — `advanceHand()` correctly advances `activeHandIndex` through split hands before advancing turn.
+- **Reshuffle** — `startNewRound` checks shoe penetration and reshuffles discard; UI shows "Reshuffling..." indicator.
+- **Room code collision** — CreateGameForm checks Firestore for existing code before writing (up to 3 attempts).
+- **Dead code** — Removed unused `'table'` view from uiStore; sound effects gated behind `soundEnabled`.
+- **Bet re-guard** — `setPlayerBet` rejects bets outside betting phase and re-bets.
+
+## Known Issues Remaining
+1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend). `isActive=false` is a workaround.
+2. **Mobile layout** — Not addressed in this pass.
+3. **Firestore rules** — Still in test mode (open access).
+4. **Chunk size** — Main bundle ~725KB; could use code splitting.
 
 ## Firebase Setup
 

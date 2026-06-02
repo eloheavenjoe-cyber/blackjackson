@@ -12,7 +12,7 @@ type Props = {
   dealerUpcard: string | null
 }
 
-export function ActionButtons({ hand, chips, onAction, rules, handIndex, playerHands, phase, dealerUpcard }: Props) {
+export function ActionButtons({ hand, chips, onAction, rules, handIndex: _hi, playerHands, phase, dealerUpcard: _du }: Props) {
   if (phase === 'insurance') {
     return (
       <div className="flex gap-2 flex-wrap justify-center">

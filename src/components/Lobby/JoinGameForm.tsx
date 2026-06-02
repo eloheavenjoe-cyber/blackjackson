@@ -27,7 +27,7 @@ export function JoinGameForm() {
 
       const updated = addPlayer(game, {
         id: user.uid, name: displayName, seat: 0, hands: [],
-        activeHandIndex: 0, chips: game.rules.startingChips, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: game.rules.startingChips, isActive: true, insuranceBet: 0, insuranceDecided: false,
       })
       await updateGameDoc(code, { players: updated.players })
       setGame(updated)
