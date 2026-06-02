@@ -11,6 +11,7 @@ type Props = {
 
 export function DealerArea({ dealerHand, showHoleCard, phase }: Props) {
   const ev = dealerHand.length > 0 ? evaluateHand(showHoleCard ? dealerHand : [dealerHand[0]]) : null
+  const dealerBJ = dealerHand.length === 2 && evaluateHand(dealerHand).isBlackjack
 
   return (
     <div className="flex flex-col items-center py-6">
@@ -18,6 +19,16 @@ export function DealerArea({ dealerHand, showHoleCard, phase }: Props) {
         <PlayerAvatar name="Dealer" seat={6} size="lg" />
         <span className="text-gold font-semibold text-lg">Dealer</span>
       </div>
+      {phase === 'insurance' && (
+        <div className="bg-gold/20 text-gold text-xs font-bold px-2 py-0.5 rounded mb-2">
+          INSURANCE
+        </div>
+      )}
+      {(phase === 'settlement' || phase === 'round_end') && dealerBJ && (
+        <div className="bg-red-500/20 text-red-400 text-xs font-bold px-2 py-0.5 rounded mb-2">
+          BLACKJACK
+        </div>
+      )}
       <div className="flex -space-x-3 mb-2">
         {dealerHand.map((card, i) => (
           <CardComponent
