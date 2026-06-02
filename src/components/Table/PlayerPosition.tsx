@@ -1,4 +1,4 @@
-import type { PlayerState, GamePhase } from '../../engine/types'
+import type { PlayerState, GamePhase, GameRules } from '../../engine/types'
 import { PlayerAvatar } from '../Shared/PlayerAvatar'
 import { CardHand } from './CardHand'
 import { ActionButtons } from './ActionButtons'
@@ -13,10 +13,12 @@ type Props = {
   turnTimeLimit: number
   turnStartedAt: number | null
   onAction: (action: any) => void
+  rules: GameRules
+  dealerUpcard: string | null
 }
 
-export function PlayerPosition({ player, isCurrentTurn, isLocalPlayer, phase, turnTimeLimit, turnStartedAt, onAction }: Props) {
-  const canAct = isCurrentTurn && isLocalPlayer && phase === 'playing'
+export function PlayerPosition({ player, isCurrentTurn, isLocalPlayer, phase, turnTimeLimit, turnStartedAt, onAction, rules, dealerUpcard }: Props) {
+  const canAct = isCurrentTurn && isLocalPlayer && (phase === 'playing' || phase === 'insurance')
 
   return (
     <motion.div
@@ -38,10 +40,23 @@ export function PlayerPosition({ player, isCurrentTurn, isLocalPlayer, phase, tu
       ))}
       {canAct && (
         <div className="mt-3 space-y-2">
-          {turnTimeLimit > 0 && turnStartedAt && (
-            <TurnTimer timeLimit={turnTimeLimit} startedAt={turnStartedAt} />
+          {turnTimeLimit > 0 && turnStartedAt && phase === 'playing' && (
+            <TurnTimer
+              timeLimit={turnTimeLimit}
+              startedAt={turnStartedAt}
+              onTimeout={() => onAction({ type: 'stand' })}
+            />
           )}
-          <ActionButtons hand={player.hands[player.activeHandIndex]} chips={player.chips} onAction={onAction} />
+          <ActionButtons
+            hand={player.hands[player.activeHandIndex]}
+            chips={player.chips}
+            onAction={onAction}
+            rules={rules}
+            handIndex={player.activeHandIndex}
+            playerHands={player.hands}
+            phase={phase}
+            dealerUpcard={dealerUpcard}
+          />
         </div>
       )}
     </motion.div>
