@@ -1,5 +1,6 @@
 import {
   doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot,
+  collection, addDoc,
   serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
@@ -43,5 +44,17 @@ export function subscribeToGame(
       return
     }
     callback(snap.data() as GameState)
+  })
+}
+
+export function betIntentsCollection(gameId: string) {
+  return collection(db, COLLECTION, gameId.toUpperCase(), 'bets')
+}
+
+export async function submitBetIntent(gameId: string, playerId: string, amount: number): Promise<void> {
+  await addDoc(betIntentsCollection(gameId), {
+    playerId,
+    amount,
+    timestamp: serverTimestamp(),
   })
 }

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
-import { subscribeToGame, updateGameDoc } from '../firebase/games'
+import { subscribeToGame, updateGameDoc, submitBetIntent } from '../firebase/games'
 import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
+import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
+import { db } from '../firebase/config'
 import type { PlayerAction } from '../engine/types'
 
 export function useGameSync() {
@@ -17,6 +19,32 @@ export function useGameSync() {
     })
     return () => unsub()
   }, [roomCode, setGame])
+
+  useEffect(() => {
+    if (!roomCode || !isHost) return
+    const betsCol = collection(db, 'games', roomCode.toUpperCase(), 'bets')
+    const unsub = fsOnSnapshot(betsCol, async (snapshot) => {
+      const current = useGameStore.getState().game
+      if (!current) return
+      for (const change of snapshot.docChanges()) {
+        if (change.type === 'added') {
+          const data = change.doc.data()
+          try {
+            let updated = setPlayerBet(current, data.playerId, data.amount)
+            await updateGameDoc(roomCode, { players: updated.players })
+            if (allBetsPlaced(updated)) {
+              const dealt = dealInitialHands(updated)
+              await updateGameDoc(roomCode, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
+            }
+          } catch (e) {
+            // Ignore duplicate/invalid bets
+          }
+          deleteDoc(change.doc.ref).catch(() => {})
+        }
+      }
+    })
+    return () => unsub()
+  }, [roomCode, isHost])
 
   useEffect(() => {
     if (!game || !isHost || !user) return
@@ -63,13 +91,7 @@ export function useGameSync() {
 
   async function submitBet(playerId: string, amount: number) {
     if (!game) return
-    const updated = setPlayerBet(game, playerId, amount)
-    await updateGameDoc(game.id, { players: updated.players })
-
-    if (allBetsPlaced(updated)) {
-      const dealt = dealInitialHands(updated)
-      await updateGameDoc(game.id, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
-    }
+    await submitBetIntent(game.id, playerId, amount)
   }
 
   function scheduleNewRound() {
