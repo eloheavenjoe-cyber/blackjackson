@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
-import { subscribeToGame, updateGameDoc, submitBetIntent } from '../firebase/games'
+import { subscribeToGame, updateGameDoc, submitBetIntent, getGameDoc } from '../firebase/games'
 import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
 import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
@@ -11,10 +11,12 @@ export function useGameSync() {
   const { game, setGame, roomCode, isHost } = useGameStore()
   const { user } = useAuthStore()
   const nextRoundTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const gameRef = useRef<GameState | null>(null)
 
   useEffect(() => {
     if (!roomCode) return
     const unsub = subscribeToGame(roomCode, (updated) => {
+      gameRef.current = updated
       setGame(updated)
     })
     return () => unsub()
@@ -24,7 +26,7 @@ export function useGameSync() {
     if (!roomCode || !isHost) return
     const betsCol = collection(db, 'games', roomCode.toUpperCase(), 'bets')
     const unsub = fsOnSnapshot(betsCol, async (snapshot) => {
-      const current = useGameStore.getState().game
+      const current = await getGameDoc(roomCode)
       if (!current) return
       for (const change of snapshot.docChanges()) {
         if (change.type === 'added') {
@@ -131,7 +133,7 @@ export function useGameSync() {
     if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current)
     nextRoundTimer.current = setTimeout(async () => {
       nextRoundTimer.current = null
-      const current = useGameStore.getState().game
+      const current = gameRef.current
       if (!current || current.phase !== 'round_end') return
       const next = startNewRound(current)
       await updateGameDoc(current.id, { ...next, shoe: next.shoe as any, players: next.players })
