@@ -5,7 +5,7 @@ import type { GameRules } from '../../engine/types'
 import { createGame, addPlayer } from '../../engine'
 import { useAuthStore } from '../../stores/authStore'
 import { useGameStore } from '../../stores/gameStore'
-import { createGameDoc } from '../../firebase/games'
+import { createGameDoc, getGameDoc } from '../../firebase/games'
 import { useUIStore } from '../../stores/uiStore'
 
 function generateRoomCode(): string {
@@ -34,7 +34,21 @@ export function CreateGameForm() {
   async function handleCreate() {
     if (!user) return
     setCreating(true)
-    const code = generateRoomCode()
+
+    let code = ''
+    let attempts = 0
+    let exists = true
+    while (exists && attempts < 3) {
+      code = generateRoomCode()
+      const existing = await getGameDoc(code)
+      if (!existing) exists = false
+      attempts++
+    }
+    if (exists) {
+      setCreating(false)
+      return
+    }
+
     let game = createGame(code, user.uid, rules)
     game = addPlayer(game, {
       id: user.uid,
@@ -45,6 +59,7 @@ export function CreateGameForm() {
       chips: rules.startingChips,
       isActive: true,
       insuranceBet: 0,
+      insuranceDecided: false,
     })
     await createGameDoc(game)
     setGame(game)
