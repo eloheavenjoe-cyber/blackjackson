@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Firebase backend. Play chips only, no real money. Casino-themed UI with custom SVG cards.
+Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Firebase backend. Play chips only, no real money. Casino-themed UI with custom SVG cards and inline SVG casino chips.
 
 **Live URL:** https://eloheavenjoe-cyber.github.io/blackjackson/
 **Repo:** https://github.com/eloheavenjoe-cyber/blackjackson
@@ -21,41 +21,74 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 - **No backend server.** Host's browser runs the Blackjack engine, writes authoritative game state to Firestore. All clients sync via `onSnapshot`.
 - **3 pages:** Lobby (`/`) → Waiting Room → Table (`/table/:roomCode`)
-- **Game state** lives in a single Firestore document `games/{roomCode}`
-- **Room codes** are 6-char alphanumeric (no I/O/0/1 to avoid confusion)
+- **Game state** in single Firestore document `games/{roomCode}`
+- **Bet intents** via subcollection `games/{code}/bets/{playerId}` — only host writes authoritative game doc
+- **Room codes** are 6-char alphanumeric (no I/O/0/1)
+- **Auto-advance** via `scheduleNewRound()` (5s timer), called from `writeAndSchedule()` for all write paths
+- **State resolution** centralized in `finalizeState()`: if phase is `'dealer'` or `'settlement'`, chains `playDealer` + `settleHands` + `settleInsurance` before writing
 
 ## Key Files
 
 | Path | Purpose |
 |------|---------|
 | `src/engine/` | Pure TypeScript engine: types, hand eval, shoe, game, dealing, actions, dealer, settlement |
+| `src/engine/actions.ts` | `processAction`, `allInsuranceDecided`, `resolveInsurance`, `advanceHand` |
+| `src/engine/dealing.ts` | `dealInitialHands` — detects dealer BJ on Ace and 10-value upcards |
+| `src/engine/settlement.ts` | `settleHands`, `settleInsurance` |
+| `src/engine/game.ts` | `createGame`, `addPlayer`, `startGame`, `setPlayerBet` (with guards), `startNewRound` (reshuffle + 0-chip removal + gameOver) |
 | `src/firebase/config.ts` | Firebase config (real credentials) |
 | `src/firebase/auth.ts` | Anonymous auth |
-| `src/firebase/games.ts` | Firestore CRUD + real-time listener |
+| `src/firebase/games.ts` | Firestore CRUD + `submitBetIntent` + `betIntentsCollection` |
 | `src/stores/authStore.ts` | Zustand: auth user + display name |
-| `src/stores/gameStore.ts` | Zustand: game state, room code, isHost |
-| `src/stores/uiStore.ts` | Zustand: sound toggle, current view |
-| `src/hooks/useGameSync.ts` | Firestore sub + action submission + auto-advance timer |
-| `src/hooks/useSound.ts` | Web Audio API sound effects (6 types) |
+| `src/stores/gameStore.ts` | Zustand: game state, roomCode, isHost, reset |
+| `src/stores/uiStore.ts` | Zustand: sound toggle, currentView (lobby/waiting) |
+| `src/hooks/useGameSync.ts` | Firestore sub + bet intent listener + `finalizeState` + `writeAndSchedule` + timer auto-stand + `scheduleNewRound` |
+| `src/hooks/useSound.ts` | Web Audio API sound effects (6 types, gated by soundEnabled) |
 | `src/components/Lobby/` | CreateGameForm, JoinGameForm, RulesConfig, WaitingRoom, LobbyPage |
-| `src/components/Table/` | TableFelt, DealerArea, PlayerPosition, CardComponent, CardHand, ChipStack, ActionButtons, TurnTimer, RoundResult, TablePage |
+| `src/components/Table/` | TableFelt, DealerArea, PlayerPosition, CardComponent, CardHand, Chip, ChipStack, ActionButtons, TurnTimer, RoundResult, BettingArea, TablePage |
 | `src/components/Shared/` | Button, Modal, PlayerAvatar |
-| `vite.config.ts` | `base: '/blackjackon/'`, Tailwind plugin |
-| `.github/workflows/deploy.yml` | Auto-deploy on push to main |
+| `docs/superpowers/specs/` | Design specs |
+| `docs/superpowers/plans/` | Implementation plans |
 
-## Bugs Fixed During Session
+## Current UI Layout
 
-1. **BrowserRouter basename** — Missing `basename="/blackjackson"` prop, causing 404 on all routes
-2. **Host not added as player** — CreateGameForm didn't add host to players array
-3. **Start navigates to lobby** — Used `setView('table')` instead of `navigate('/table/...')` 
-4. **White cards** — Black suits had `text-white` on `bg-white` background, changed to `text-gray-900`
-5. **Game freezes after round** — No next round flow, added `startNewRound` + auto-advance timer (5s)
-6. **Chips not decreasing on loss** — Settlement returned bet even on loss, fixed to return 0
-7. **Text selection** — Global `user-select: none` added
-8. **Animations too fast** — Slowed card dealing (0.6s, 0.2s stagger, softer spring)
-9. **Copy link UX** — Removed "copy link" button, room code itself is clickable to copy
-10. **Invalid table URLs give 404** — Added timeout redirect with "Back to Lobby" button
-11. **Console AbortError spam** — Browser extension interfering with fetch, suppressed via global handler
+- **Half-oval table** — starts at top of screen, `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), felt grain texture (inline SVG pattern), radial highlight
+- **Dealer** — sits on flat top edge of table with dark backdrop, cards overlap, insurance/blackjack pill badges
+- **Players** — positioned on elliptical arc via `computePositions()` (220°–320°, rx/ry), cards on felt with dashed gold betting circles, name + chips below
+- **BettingArea** — below the table in dark floor area, clickable chip tray (6 denominations) + accumulator + Place Bet button
+- **Chip display** — contained area (`w-48`, min-height 80px), chips in rows of 5, overlap within rows, `+N more` overflow indicator, clickable to remove
+- **Host buttons** — Deal Cards / New Round below the table, centered
+- **RoundResult** — per-hand result overlay (WIN/LOSE/BUST/PUSH/BLACKJACK/SURRENDER) between dealer and table
+- **Game Over** — full overlay with backdrop blur, redirects to lobby
+- **Back to Lobby** — resets both gameStore and uiStore before navigating (prevents WaitingRoom redirect loop)
+
+## Key Engine Functions
+
+### actions.ts
+- `processAction(state, action)` — hit, stand, double (with rule enforcement), split (value-based), surrender (first-action guard), insurance_yes/no
+- `allInsuranceDecided(state)` — checks all players have `insuranceDecided === true`
+- `resolveInsurance(state)` — pays 2:1 on dealer BJ, transitions to settlement/playing
+- `advanceHand(state)` — advances `activeHandIndex` through split hands before `advanceTurn`
+- `getNextActivePlayer` — skips `!isActive` players (disconnect handling)
+
+### game.ts
+- `setPlayerBet` — guards: betting phase only, no re-betting
+- `startNewRound` — checks `needsReshuffle`, removes 0-chip players to `removedPlayers[]`, sets `gameOver: true` when all bust
+- `allBetsPlaced` — all players have hands[0].bet > 0
+
+### dealing.ts
+- `dealInitialHands` — checks dealer BJ on Ace-up (with/without insurance) and 10-value-up
+
+### settlement.ts
+- `settleHands` — evaluates all hands vs dealer, handles BJ/push/win/lose/bust
+- `settleInsurance` — pays insurance 2:1 when dealer has BJ
+
+### useGameSync.ts
+- `finalizeState(state)` — runs dealer play + settlement if phase is `'dealer'` or `'settlement'`
+- `writeAndSchedule(state)` — writes to Firestore, calls `scheduleNewRound()` if `phase === 'round_end'`
+- Bet intent listener — calls `getGameDoc` for authoritative state (avoids stale store reads)
+- Timer auto-stand — tracks consecutive timeouts, marks inactive after 2
+- `scheduleNewRound` — uses `gameRef` for fresh state
 
 ## Test Coverage
 
@@ -63,48 +96,45 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - `types.test.ts` — Type definitions
 - `hand.test.ts` — Hand evaluation (blackjack, soft, hard, bust, multiple aces)
 - `shoe.test.ts` — Shoe creation, draw, reshuffle threshold
-- `game.test.ts` — Game creation, add/remove player, start game
-- `dealing.test.ts` — Initial deal, insurance phase
-- `actions.test.ts` — Stand, split actions
+- `game.test.ts` — Game creation, add/remove player, start game, setPlayerBet guards, startNewRound (0-chip, gameOver)
+- `dealing.test.ts` — Initial deal, insurance phase, dealer BJ detection
+- `actions.test.ts` — Stand, split, double (rule enforcement), surrender (guard), insurance actions
 - `dealer.test.ts` — Dealer S17/H17, draw to 17+
-- `settlement.test.ts` — Win, loss, push, blackjack, doubled win, split mixed results
+- `settlement.test.ts` — Win, loss, push, blackjack, doubled win, split mixed results, insurance payout
 
 Tests pass: `npx vitest run`
 
-## Bugs Fixed (2026-06-02)
+## Fixed Issues Summary
 
-1. ~~**Concurrency**~~ — Fixed: Two-phase bet submission via `games/{code}/bets/{playerId}` subcollection. Only host writes authoritative game doc.
-2. ~~**Double down rules**~~ — Fixed: Engine checks `rules.doubleDown` (`none`/`9-10-11`/`any`) and UI gates button visibility.
-3. ~~**Insurance flow**~~ — Fixed: Full engine handling (`insurance_yes`/`insurance_no` + `resolveInsurance`) + UI insurance prompt.
-4. ~~**Surrender button**~~ — Fixed: ActionButtons shows surrender when `rules.surrender === 'late'` + first-action guard.
-5. ~~**Split 10-value pairs**~~ — Fixed: Uses `calculateHandValue` for value comparison instead of rank string equality.
-6. ~~**Turn timer auto-stand**~~ — Fixed: `onTimeout` callback auto-submits stand action. Host enforces timer. Inactive after 2 timeouts.
-7. **Player disconnect** — Partially fixed: `lastActionAt` tracking, `isActive=false` after 2 timeouts, "Away" badge, skipped in turn logic. Full presence system still needs backend.
-8. ~~**0-chip players**~~ — Fixed: `startNewRound` removes 0-chip players with `removedPlayers` tracking + `gameOver` when all bust.
-9. ~~**Mobile layout**~~ — Skipped (excluded from scope).
+### Known Issues (from earlier session)
+1. ~~Bet concurrency~~ — Two-phase bet submission via `games/{code}/bets/{playerId}` subcollection
+2. ~~Double down rules~~ — Engine + UI enforce `none`/`9-10-11`/`any`
+3. ~~Insurance flow~~ — Full engine handlers + UI prompt
+4. ~~Surrender button~~ — ActionButtons shows surrender when `rules.surrender === 'late'`
+5. ~~Split 10-value pairs~~ — `calculateHandValue` for value comparison
+6. ~~Turn timer auto-stand~~ — `onTimeout` callback + host enforcement
+7. **Player disconnect** — Partial: `isActive=false` after 2 timeouts, "Away" badge, skipped in turn logic
+8. ~~0-chip players~~ — `startNewRound` removal + `gameOver`
+9. **Mobile layout** — Not addressed
 
-## Additional Fixes
-- **Round result labels** — Now shows per-hand results; "BUST" only for actual busts, "LOSE" otherwise, "SURRENDER" label.
-- **Dealer Ace-up BJ** — Now detected even when insurance is off; goes straight to settlement.
-- **Split hand navigation** — `advanceHand()` correctly advances `activeHandIndex` through split hands before advancing turn.
-- **Reshuffle** — `startNewRound` checks shoe penetration and reshuffles discard; UI shows "Reshuffling..." indicator.
-- **Room code collision** — CreateGameForm checks Firestore for existing code before writing (up to 3 attempts).
-- **Dead code** — Removed unused `'table'` view from uiStore; sound effects gated behind `soundEnabled`.
-- **Bet re-guard** — `setPlayerBet` rejects bets outside betting phase and re-bets.
-
-## Table Polish (2026-06-02)
-- **Visual chips** — Inline SVG `Chip` component with 6 denominations (10/25/50/100/250/500), edge spots, molded rim, clickable tray
-- **Chip tray betting** — `BettingArea` with clickable chip denominations accumulating bet, replaces text buttons
-- **Semicircle layout** — Players positioned on arc via `computePositions`, dynamic based on player count and viewport
-- **Felt rework** — Dark green with grain texture (inline SVG pattern), wide wood rim (#5c3a1e) with gold inner ring
-- **DealerArea** — Simplified, cards on felt, smaller avatar, empty state placeholder
-- **PlayerPosition** — Cards and actions on the felt, dashed betting circle markings
+### Additional Fixes
+- Dealer Ace-up BJ detection (insurance on/off)
+- Split hand navigation (`advanceHand`)
+- Reshuffle in `startNewRound` + UI indicator
+- Room code collision check (Firestore, 3 attempts)
+- Bet re-guard (phase + already-bet check)
+- Per-hand RoundResult labels (BUST vs LOSE vs SURRENDER)
+- Back to Lobby reset (prevents WaitingRoom redirect loop)
+- Centralized state resolution (`finalizeState` + `writeAndSchedule`)
+- Bet intent listener reads `getGameDoc` to avoid stale store race
+- `scheduleNewRound` uses `gameRef` for fresh state
 
 ## Known Issues Remaining
-1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend). `isActive=false` is a workaround.
-2. **Mobile layout** — Not addressed in this pass.
-3. **Firestore rules** — Still in test mode (open access).
-4. **Chunk size** — Main bundle ~730KB; could use code splitting.
+1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
+2. **Mobile layout** — Not addressed
+3. **Firestore rules** — Still in test mode (open access)
+4. **Chunk size** — Main bundle ~732KB; could use code splitting
+5. **Table UI polish** — Half-oval shape is close but needs refinement (player positions, table proportions, betting area styling)
 
 ## Firebase Setup
 
@@ -115,8 +145,8 @@ Tests pass: `npx vitest run`
 
 ## Git Conventions
 
-- Branches: `main` only (no feature branches)
-- Commits: conventional commit style (`feat:`, `fix:`, `chore:`, `ci:`)
+- Branches: `main` only
+- Commits: conventional commit style (`feat:`, `fix:`, `chore:`, `ci:`, `docs:`)
 - Deploy: automatic on push to `main` via GitHub Actions
 
 ## Commands
