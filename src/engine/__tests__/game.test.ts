@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { createGame, addPlayer, removePlayer, startGame } from '../game'
+import {
+  createGame, addPlayer, removePlayer, startGame,
+  setPlayerBet, startNewRound,
+} from '../game'
 import type { GameRules, PlayerState } from '../types'
 
 const defaultRules: GameRules = {
@@ -25,7 +28,7 @@ describe('addPlayer', () => {
     const game = createGame('ABC123', 'host-1', defaultRules)
     const player: PlayerState = {
       id: 'p1', name: 'Alice', seat: 0, hands: [],
-      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0,
+      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false,
     }
     const updated = addPlayer(game, player)
     expect(updated.players).toHaveLength(1)
@@ -38,12 +41,12 @@ describe('addPlayer', () => {
     for (let i = 0; i < 6; i++) {
       state = addPlayer(state, {
         id: `p${i}`, name: `Player${i}`, seat: i, hands: [],
-        activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0,
+        activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false,
       })
     }
     expect(() => addPlayer(state, {
       id: 'p7', name: 'Extra', seat: 6, hands: [],
-      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0,
+      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false,
     })).toThrow('Game is full')
   })
 })
@@ -53,7 +56,7 @@ describe('removePlayer', () => {
     const game = createGame('ABC123', 'host-1', defaultRules)
     let state = addPlayer(game, {
       id: 'p1', name: 'Alice', seat: 0, hands: [],
-      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0,
+      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false,
     })
     state = removePlayer(state, 'p1')
     expect(state.players).toHaveLength(0)
@@ -65,7 +68,7 @@ describe('startGame', () => {
     const game = createGame('ABC123', 'host-1', defaultRules)
     let state = addPlayer(game, {
       id: 'p1', name: 'Alice', seat: 0, hands: [],
-      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0,
+      activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false,
     })
     state = startGame(state)
     expect(state.phase).toBe('betting')
@@ -75,5 +78,43 @@ describe('startGame', () => {
   it('throws if no players', () => {
     const game = createGame('ABC123', 'host-1', defaultRules)
     expect(() => startGame(game)).toThrow('Need at least one player')
+  })
+})
+
+describe('setPlayerBet', () => {
+  it('rejects bet outside betting phase', () => {
+    const game = createGame('ABC', 'host', defaultRules)
+    expect(() => setPlayerBet(game, 'p1', 50)).toThrow('Not in betting phase')
+  })
+
+  it('rejects re-betting', () => {
+    let game = createGame('ABC', 'host', defaultRules)
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    expect(() => setPlayerBet(game, 'p1', 100)).toThrow('Already placed a bet')
+  })
+})
+
+describe('startNewRound', () => {
+  it('removes players with 0 chips', () => {
+    let game = createGame('ABC', 'host', defaultRules)
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 0, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = addPlayer(game, { id: 'p2', name: 'Bob', seat: 1, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = { ...game, phase: 'round_end' as const }
+    game = startNewRound(game)
+    expect(game.players).toHaveLength(1)
+    expect(game.players[0].id).toBe('p2')
+    expect(game.removedPlayers).toHaveLength(1)
+    expect(game.removedPlayers![0].reason).toBe('bust')
+  })
+
+  it('sets gameOver when all players bust', () => {
+    let game = createGame('ABC', 'host', defaultRules)
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 0, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = { ...game, phase: 'round_end' as const }
+    game = startNewRound(game)
+    expect(game.gameOver).toBe(true)
+    expect(game.players).toHaveLength(0)
   })
 })

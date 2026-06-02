@@ -1,5 +1,5 @@
 import type { GameState, GameRules, PlayerState } from './types'
-import { createShoe } from './shoe'
+import { createShoe, needsReshuffle, reshuffleDiscard } from './shoe'
 
 export function createGame(id: string, hostId: string, rules: GameRules): GameState {
   return {
@@ -52,8 +52,10 @@ export function setPlayerBet(
   playerId: string,
   amount: number
 ): GameState {
+  if (state.phase !== 'betting') throw new Error('Not in betting phase')
   const player = state.players.find((p) => p.id === playerId)
   if (!player) throw new Error('Player not found')
+  if (player.hands.length > 0 && player.hands[0].bet > 0) throw new Error('Already placed a bet')
   if (amount < state.rules.minBet) throw new Error('Bet below minimum')
   if (amount > state.rules.maxBet) throw new Error('Bet above maximum')
   if (amount > player.chips) throw new Error('Insufficient chips')
@@ -78,21 +80,53 @@ export function allBetsPlaced(state: GameState): boolean {
 }
 
 export function startNewRound(state: GameState): GameState {
+  let shoe = state.shoe
+  let discard = [...state.discard, ...state.dealerHand, ...state.players.flatMap((p) => p.hands.flatMap((h) => h.cards))]
+
+  if (needsReshuffle(shoe, state.rules.decks)) {
+    const reshuffled = reshuffleDiscard(discard)
+    shoe = reshuffled
+    discard = []
+  }
+
+  const removedPlayers = (state.removedPlayers || []).filter(p => p.reason !== 'bust')
+  const bustedPlayers = state.players.filter(p => p.chips <= 0)
+  const newRemoved = [
+    ...removedPlayers,
+    ...bustedPlayers.map(p => ({ id: p.id, name: p.name, reason: 'bust' as const })),
+  ]
+
+  const activePlayers = state.players.filter(p => p.chips > 0)
+  if (activePlayers.length === 0) {
+    return {
+      ...state,
+      phase: 'round_end' as const,
+      shoe,
+      discard,
+      players: [],
+      removedPlayers: newRemoved,
+      gameOver: true,
+    }
+  }
+
   return {
     ...state,
-    phase: 'betting',
+    phase: 'betting' as const,
     roundNumber: state.roundNumber + 1,
     dealerHand: [],
     dealerHoleCard: null,
     currentTurn: -1,
     turnStartedAt: null,
-    discard: [...state.discard, ...state.dealerHand, ...state.players.flatMap((p) => p.hands.flatMap((h) => h.cards))],
-    players: state.players.map((p) => ({
+    shoe,
+    discard,
+    removedPlayers: newRemoved,
+    players: activePlayers.map((p) => ({
       ...p,
       hands: [],
       activeHandIndex: 0,
       isActive: true,
       insuranceBet: 0,
+      insuranceDecided: false,
     })),
   }
 }
