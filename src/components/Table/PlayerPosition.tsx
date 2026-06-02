@@ -15,55 +15,84 @@ type Props = {
   onAction: (action: any) => void
   rules: GameRules
   dealerUpcard: string | null
+  x: number
+  y: number
+  angle: number
 }
 
-export function PlayerPosition({ player, isCurrentTurn, isLocalPlayer, phase, turnTimeLimit, turnStartedAt, onAction, rules, dealerUpcard }: Props) {
+export function PlayerPosition({
+  player, isCurrentTurn, isLocalPlayer, phase,
+  turnTimeLimit, turnStartedAt, onAction, rules, dealerUpcard,
+  x, y, angle: _angle,
+}: Props) {
   const canAct = isCurrentTurn && isLocalPlayer && (phase === 'playing' || phase === 'insurance')
 
   return (
-    <motion.div
-      animate={{
-        scale: isCurrentTurn ? 1.02 : 1,
-        boxShadow: isCurrentTurn ? '0 0 20px rgba(212,168,67,0.3)' : '0 0 0px rgba(0,0,0,0)',
+    <div
+      className="absolute"
+      style={{
+        left: x,
+        top: y,
+        transform: `translate(-50%, -50%)`,
       }}
-      className="relative bg-black/20 rounded-xl p-3 border border-white/5 min-w-[180px]"
     >
-      <div className="flex items-center gap-2 mb-2">
-        <PlayerAvatar name={player.name} seat={player.seat} isActive={isCurrentTurn} />
-        <div>
-          <span className="text-white text-sm font-medium block">
-            {player.name}
-            {player.isActive === false && (
-              <span className="text-gray-500 text-xs ml-1">(Away)</span>
-            )}
-          </span>
-          <span className="text-gold text-xs">{player.chips} chips</span>
-        </div>
+      <motion.div
+        animate={{
+          boxShadow: isCurrentTurn
+            ? '0 0 24px rgba(212,168,67,0.4), 0 0 0 2px rgba(212,168,67,0.3)'
+            : '0 0 0 1px rgba(212,168,67,0.1)',
+        }}
+        className="w-24 h-24 rounded-full border-2 border-dashed border-gold/20 mx-auto mb-1"
+      />
+
+      <div className="flex justify-center" style={{ marginTop: '-64px' }}>
+        {player.hands.length === 0 ? (
+          <div className="w-12 h-18" />
+        ) : (
+          player.hands.map((hand, hi) => (
+            <div key={hi} className={hi > 0 ? 'ml-2' : ''}>
+              <CardHand hand={hand} handIndex={hi} activeHandIndex={player.activeHandIndex} />
+            </div>
+          ))
+        )}
       </div>
-      {player.hands.map((hand, hi) => (
-        <CardHand key={hi} hand={hand} handIndex={hi} activeHandIndex={player.activeHandIndex} />
-      ))}
+
       {canAct && (
-        <div className="mt-3 space-y-2">
-          {turnTimeLimit > 0 && turnStartedAt && phase === 'playing' && (
-            <TurnTimer
-              timeLimit={turnTimeLimit}
-              startedAt={turnStartedAt}
-              onTimeout={() => onAction({ type: 'stand' })}
+        <div className="flex justify-center mt-2">
+          <div className="space-y-1.5">
+            {turnTimeLimit > 0 && turnStartedAt && phase === 'playing' && (
+              <TurnTimer
+                timeLimit={turnTimeLimit}
+                startedAt={turnStartedAt}
+                onTimeout={() => onAction({ type: 'stand' })}
+              />
+            )}
+            <ActionButtons
+              hand={player.hands[player.activeHandIndex]}
+              chips={player.chips}
+              onAction={onAction}
+              rules={rules}
+              handIndex={player.activeHandIndex}
+              playerHands={player.hands}
+              phase={phase}
+              dealerUpcard={dealerUpcard}
             />
-          )}
-          <ActionButtons
-            hand={player.hands[player.activeHandIndex]}
-            chips={player.chips}
-            onAction={onAction}
-            rules={rules}
-            handIndex={player.activeHandIndex}
-            playerHands={player.hands}
-            phase={phase}
-            dealerUpcard={dealerUpcard}
-          />
+          </div>
         </div>
       )}
-    </motion.div>
+
+      <div className="flex flex-col items-center mt-1">
+        <div className="flex items-center gap-1">
+          <PlayerAvatar name={player.name} seat={player.seat} size="sm" isActive={isCurrentTurn} />
+          <span className="text-white text-xs font-medium">
+            {player.name}
+            {player.isActive === false && (
+              <span className="text-gray-500 ml-1">(Away)</span>
+            )}
+          </span>
+        </div>
+        <span className="text-gold text-xs">{player.chips} chips</span>
+      </div>
+    </div>
   )
 }
