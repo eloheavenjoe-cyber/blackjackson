@@ -31,7 +31,12 @@ export function PlayerPosition({ player, isCurrentTurn, isLocalPlayer, phase, tu
       <div className="flex items-center gap-2 mb-2">
         <PlayerAvatar name={player.name} seat={player.seat} isActive={isCurrentTurn} />
         <div>
-          <span className="text-white text-sm font-medium block">{player.name}</span>
+          <span className="text-white text-sm font-medium block">
+            {player.name}
+            {player.isActive === false && (
+              <span className="text-gray-500 text-xs ml-1">(Away)</span>
+            )}
+          </span>
           <span className="text-gold text-xs">{player.chips} chips</span>
         </div>
       </div>

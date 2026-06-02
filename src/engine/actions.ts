@@ -39,6 +39,7 @@ function advanceTurn(state: GameState): GameState {
 function getNextActivePlayer(state: GameState, from: number): number {
   for (let i = from + 1; i < state.players.length; i++) {
     const p = state.players[i]
+    if (!p.isActive) continue
     const activeHand = p.hands[p.activeHandIndex]
     if (activeHand && !activeHand.isStood && !activeHand.isSurrendered) {
       const ev = evaluateHand(activeHand.cards)

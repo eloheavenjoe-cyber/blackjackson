@@ -63,7 +63,26 @@ export function useGameSync() {
       const current = useGameStore.getState().game
       if (!current || current.phase !== 'playing' || current.currentTurn !== game.currentTurn) return
       const updated = processAction(current, { type: 'stand', playerId: currentPlayer.id })
-      await updateGameDoc(current.id, { ...updated, shoe: updated.shoe as any, players: updated.players })
+
+      const timeoutKey = currentPlayer.id + '_timeouts'
+      const prevTimeouts = (current.lastActionAt?.[timeoutKey] as number) || 0
+      const newTimeouts = prevTimeouts + 1
+      const lastActionPatch = {
+        lastActionAt: { ...current.lastActionAt, [timeoutKey]: newTimeouts }
+      }
+
+      if (newTimeouts >= 2) {
+        const marked = {
+          ...updated,
+          players: updated.players.map((p: any) =>
+            p.id === currentPlayer.id ? { ...p, isActive: false } : p
+          ),
+          ...lastActionPatch,
+        }
+        await updateGameDoc(current.id, { ...marked, shoe: marked.shoe as any, players: marked.players })
+      } else {
+        await updateGameDoc(current.id, { ...updated, ...lastActionPatch, shoe: updated.shoe as any, players: updated.players })
+      }
     }, remaining)
 
     return () => clearTimeout(timer)
