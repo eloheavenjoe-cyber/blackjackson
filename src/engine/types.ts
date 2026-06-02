@@ -50,6 +50,7 @@ export type PlayerState = {
   chips: number
   isActive: boolean
   insuranceBet: number
+  insuranceDecided: boolean
 }
 
 export type PlayerAction =
@@ -84,4 +85,7 @@ export type GameState = {
   turnStartedAt: number | null
   roundNumber: number
   createdAt: number
+  removedPlayers?: { id: string; name: string; reason: 'bust' | 'kicked' | 'disconnected' }[]
+  lastActionAt?: Record<string, number>
+  gameOver?: boolean
 }
