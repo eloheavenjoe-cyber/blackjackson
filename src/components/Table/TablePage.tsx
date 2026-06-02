@@ -9,7 +9,7 @@ import { PlayerPosition } from './PlayerPosition'
 import { RoundResult } from './RoundResult'
 import { Button } from '../Shared/Button'
 import { updateGameDoc } from '../../firebase/games'
-import { dealInitialHands, allBetsPlaced, needsReshuffle } from '../../engine'
+import { dealInitialHands, allBetsPlaced, needsReshuffle, settleHands, settleInsurance, startNewRound } from '../../engine'
 
 export function TablePage() {
   const { roomCode: paramCode } = useParams<{ roomCode: string }>()
@@ -73,7 +73,12 @@ export function TablePage() {
 
   async function handleStartRound() {
     if (!game || !isHost) return
-    const dealt = dealInitialHands(game)
+    let dealt = dealInitialHands(game)
+    if (dealt.phase === 'settlement') {
+      const settled = settleInsurance(settleHands(dealt))
+      await updateGameDoc(game.id, { ...settled, shoe: settled.shoe as any, players: settled.players })
+      return
+    }
     await updateGameDoc(game.id, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
   }
 
@@ -152,6 +157,15 @@ export function TablePage() {
         {isBetting && allBet && isHost && (
           <div className="flex justify-center pb-4">
             <Button onClick={handleStartRound}>Deal Cards</Button>
+          </div>
+        )}
+
+        {game.phase === 'round_end' && !game.gameOver && isHost && (
+          <div className="flex justify-center pb-4">
+            <Button onClick={async () => {
+              const next = startNewRound(game)
+              await updateGameDoc(game.id, { ...next, shoe: next.shoe as any, players: next.players })
+            }}>New Round</Button>
           </div>
         )}
       </div>

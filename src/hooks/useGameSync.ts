@@ -33,8 +33,14 @@ export function useGameSync() {
             let updated = setPlayerBet(current, data.playerId, data.amount)
             await updateGameDoc(roomCode, { players: updated.players })
             if (allBetsPlaced(updated)) {
-              const dealt = dealInitialHands(updated)
-              await updateGameDoc(roomCode, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
+              let dealt = dealInitialHands(updated)
+              if (dealt.phase === 'settlement') {
+                const settled = settleInsurance(settleHands(dealt))
+                await updateGameDoc(roomCode, { ...settled, shoe: settled.shoe as any, players: settled.players })
+                scheduleNewRound()
+              } else {
+                await updateGameDoc(roomCode, { ...dealt, shoe: dealt.shoe as any, players: dealt.players })
+              }
             }
           } catch (e) {
             // Ignore duplicate/invalid bets
