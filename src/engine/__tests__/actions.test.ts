@@ -124,3 +124,42 @@ describe('processAction - double', () => {
     expect(() => processAction(game, { type: 'double', playerId: 'p1' })).toThrow()
   })
 })
+
+describe('processAction - surrender', () => {
+  it('blocks surrender after hitting (more than 2 cards)', () => {
+    let game = createGame('T7', 'host', { ...rules, surrender: 'late' })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: '5' }, { suit: 'D', rank: '3' }, { suit: 'C', rank: '2' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    expect(() => processAction(game, { type: 'surrender', playerId: 'p1' })).toThrow('Can only surrender on initial two cards')
+  })
+
+  it('allows surrender on two cards', () => {
+    let game = createGame('T8', 'host', { ...rules, surrender: 'late' })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: 'K' }, { suit: 'D', rank: '6' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    const result = processAction(game, { type: 'surrender', playerId: 'p1' })
+    expect(result.players[0].hands[0].isSurrendered).toBe(true)
+    expect(result.players[0].hands[0].result).toBe('lose')
+    expect(result.players[0].chips).toBe(975) // 950 + 25 (half bet returned)
+  })
+})

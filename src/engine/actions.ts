@@ -144,6 +144,9 @@ export function processAction(state: GameState, action: PlayerAction): GameState
 
     case 'surrender': {
       if (state.rules.surrender === 'none') throw new Error('Surrender not allowed')
+      const player = state.players[playerIndex]
+      const hand = player.hands[player.activeHandIndex]
+      if (hand.cards.length !== 2) throw new Error('Can only surrender on initial two cards')
       const surrendered = {
         ...state,
         players: state.players.map((p, i) =>
