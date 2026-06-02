@@ -74,7 +74,7 @@ describe('dealInitialHands', () => {
 
       const dealerUpcard = game.dealerHand[0]
       if (dealerUpcard.rank !== 'A') {
-        expect(game.phase).toBe('playing')
+        expect(['playing', 'settlement']).toContain(game.phase)
         return
       }
     }

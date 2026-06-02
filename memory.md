@@ -92,11 +92,19 @@ Tests pass: `npx vitest run`
 - **Dead code** — Removed unused `'table'` view from uiStore; sound effects gated behind `soundEnabled`.
 - **Bet re-guard** — `setPlayerBet` rejects bets outside betting phase and re-bets.
 
+## Table Polish (2026-06-02)
+- **Visual chips** — Inline SVG `Chip` component with 6 denominations (10/25/50/100/250/500), edge spots, molded rim, clickable tray
+- **Chip tray betting** — `BettingArea` with clickable chip denominations accumulating bet, replaces text buttons
+- **Semicircle layout** — Players positioned on arc via `computePositions`, dynamic based on player count and viewport
+- **Felt rework** — Dark green with grain texture (inline SVG pattern), wide wood rim (#5c3a1e) with gold inner ring
+- **DealerArea** — Simplified, cards on felt, smaller avatar, empty state placeholder
+- **PlayerPosition** — Cards and actions on the felt, dashed betting circle markings
+
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend). `isActive=false` is a workaround.
 2. **Mobile layout** — Not addressed in this pass.
 3. **Firestore rules** — Still in test mode (open access).
-4. **Chunk size** — Main bundle ~725KB; could use code splitting.
+4. **Chunk size** — Main bundle ~730KB; could use code splitting.
 
 ## Firebase Setup
 
