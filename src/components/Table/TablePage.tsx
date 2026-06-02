@@ -111,7 +111,7 @@ export function TablePage() {
 
   return (
     <TableFelt>
-      <div ref={containerRef} className="h-full flex flex-col relative">
+      <div ref={containerRef} className="absolute inset-0 flex flex-col">
         {showReshuffle && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gold/90 text-gray-900 font-bold px-6 py-2 rounded-lg z-10 animate-pulse">
             Reshuffling...
