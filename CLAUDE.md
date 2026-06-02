@@ -1,4 +1,6 @@
-# Blackjackson — Claude Rules
+# Blackjackson — Project Rules
+
+> **Inherits:** `C:\Users\Faber\Projects\CLAUDE.md` for all general rules (personality, planning, implementation standards, scope control, context management, edit safety, self-correction). This file adds project-specific overrides only.
 
 ## Project Configuration
 
@@ -10,31 +12,16 @@
 
 ## Session Start
 
-**ALWAYS read `memory.md` first.** It contains the full project context, architecture, file map, known issues, and every bug fixed so far. Do not start work without reading it.
+**ALWAYS read `memory.md` first.** It contains architecture, file map, known issues, and every bug fixed. Do not start work without reading it.
 
-## Personality: Be Honest, Not Agreeable
+## Project Conventions
 
-Push back when an idea is technically weak, risky, or inconsistent with existing code. Say "that won't work because..." directly.
-
-## Planning
-
-- For non-trivial features (3+ steps): interview about implementation, UX, and tradeoffs before writing code
-- Never attempt multi-file refactors in one response. Break into phases of max 5 files
-
-## Implementation Standards
-
-- Read files before editing — never assume code is unchanged
-- Run `npx vitest run` and `npm run build` after changes
-- Commit after each meaningful piece of work
-- Keep changes exact — no drive-by refactors
-
-## Conventions
-
-- Pure TypeScript engine in `src/engine/` — zero UI dependencies, fully tested
+- Pure TypeScript engine in `src/engine/` — zero UI dependencies, fully tested (36 tests)
 - Firestore document per game (`games/{roomCode}`) — host browser is authoritative
 - Zustand stores for client state
 - Tailwind theme tokens in `src/index.css` (felt, gold, chip colors)
 - Commit style: `feat:`, `fix:`, `chore:`, `ci:`, `docs:`
+- Run `npx vitest run && npm run build` after changes
 
 ## Post-Session
 
