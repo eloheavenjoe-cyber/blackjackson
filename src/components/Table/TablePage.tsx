@@ -110,104 +110,113 @@ export function TablePage() {
   }
 
   return (
-    <TableFelt>
-      <div ref={containerRef} className="absolute inset-0 flex flex-col">
-        {showReshuffle && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gold/90 text-gray-900 font-bold px-6 py-2 rounded-lg z-10 animate-pulse">
-            Reshuffling...
+    <div className="min-h-screen relative" style={{ background: 'radial-gradient(ellipse at 50% 30%, #3b2210 0%, #1a0a00 60%, #0a0400 100%)' }}>
+      {/* Dealer sits above the table, on the flat top edge */}
+      <DealerArea
+        dealerHand={game.dealerHand}
+        showHoleCard={game.phase === 'dealer' || game.phase === 'settlement' || game.phase === 'round_end'}
+        phase={game.phase}
+      />
+
+      {/* Round result overlay */}
+      <RoundResult hands={localPlayer?.hands ?? []} visible={game.phase === 'round_end'} />
+
+      {/* Game over overlay */}
+      {game.gameOver && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
+          <div className="text-center space-y-4 bg-black/80 backdrop-blur rounded-2xl px-8 py-6">
+            <p className="text-3xl font-black text-red-400">Game Over</p>
+            <p className="text-gray-400">All players have busted out.</p>
+            <Button onClick={goToLobby}>Back to Lobby</Button>
           </div>
-        )}
-
-        <div className="flex items-center justify-between px-6 py-3 relative z-10">
-          <div className="text-gold text-sm font-mono">Round {game.roundNumber}</div>
-          <div className="text-white/70 text-sm font-mono">Room: {game.id}</div>
-          <div className="text-gray-400 text-sm">{game.players.length} players</div>
         </div>
+      )}
 
-        <DealerArea
-          dealerHand={game.dealerHand}
-          showHoleCard={game.phase === 'dealer' || game.phase === 'settlement' || game.phase === 'round_end'}
-          phase={game.phase}
-        />
-
-        <div className="relative z-10" style={{ marginTop: '-20px' }}>
-          <RoundResult hands={localPlayer?.hands ?? []} visible={game.phase === 'round_end'} />
-        </div>
-
-        {game.gameOver && (
-          <div className="flex-1 flex items-center justify-center relative z-10">
-            <div className="text-center space-y-4 bg-black/60 backdrop-blur rounded-2xl px-8 py-6">
-              <p className="text-3xl font-black text-red-400">Game Over</p>
-              <p className="text-gray-400">All players have busted out.</p>
-              <Button onClick={goToLobby}>Back to Lobby</Button>
+      {/* Half-oval table */}
+      <TableFelt>
+        <div ref={containerRef} className="absolute inset-0 flex flex-col">
+          {showReshuffle && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gold/90 text-gray-900 font-bold px-6 py-2 rounded-lg z-10 animate-pulse">
+              Reshuffling...
             </div>
+          )}
+
+          {/* Header bar */}
+          <div className="flex items-center justify-between px-6 py-3 relative z-10">
+            <div className="text-gold/80 text-xs font-mono">Round {game.roundNumber}</div>
+            <div className="text-white/50 text-xs font-mono">{game.id}</div>
+            <div className="text-white/30 text-xs">{game.players.length} players</div>
           </div>
-        )}
 
-        {!game.gameOver && (
-          <div className="flex-1 relative">
-            {game.players.map((player, i) => (
-              <PlayerPosition
-                key={player.id}
-                player={player}
-                isCurrentTurn={game.currentTurn === player.seat}
-                isLocalPlayer={player.id === user.uid}
-                phase={game.phase}
-                turnTimeLimit={game.turnTimeLimit}
-                turnStartedAt={game.turnStartedAt}
-                onAction={submitAction}
-                rules={game.rules}
-                dealerUpcard={game.dealerHand.length > 0 ? game.dealerHand[0].rank : null}
-                x={positions[i]?.x ?? 0}
-                y={positions[i]?.y ?? 0}
-                angle={positions[i]?.angle ?? 0}
-              />
-            ))}
-          </div>
-        )}
+          {/* Players on arc */}
+          {!game.gameOver && (
+            <div className="flex-1 relative">
+              {game.players.map((player, i) => (
+                <PlayerPosition
+                  key={player.id}
+                  player={player}
+                  isCurrentTurn={game.currentTurn === player.seat}
+                  isLocalPlayer={player.id === user.uid}
+                  phase={game.phase}
+                  turnTimeLimit={game.turnTimeLimit}
+                  turnStartedAt={game.turnStartedAt}
+                  onAction={submitAction}
+                  rules={game.rules}
+                  dealerUpcard={game.dealerHand.length > 0 ? game.dealerHand[0].rank : null}
+                  x={positions[i]?.x ?? 0}
+                  y={positions[i]?.y ?? 0}
+                  angle={positions[i]?.angle ?? 0}
+                />
+              ))}
+            </div>
+          )}
 
-        {game.phase === 'insurance' && isHost && (
-          <div className="flex justify-center pb-2 relative z-10">
-            <p className="text-gold text-sm">Waiting for insurance decisions...</p>
-          </div>
-        )}
+          {/* Insurance waiting */}
+          {game.phase === 'insurance' && isHost && (
+            <div className="flex justify-center pb-2 relative z-10">
+              <p className="text-gold text-sm">Waiting for insurance decisions...</p>
+            </div>
+          )}
 
-        {isBetting && !allBet && localPlayer && (
-          <BettingArea
-            chips={localPlayer.chips}
-            minBet={game.rules.minBet}
-            maxBet={game.rules.maxBet}
-            onPlaceBet={(amount) => submitBet(user.uid, amount)}
-            alreadyBet={false}
-          />
-        )}
+          {/* Betting area */}
+          {isBetting && !allBet && localPlayer && (
+            <BettingArea
+              chips={localPlayer.chips}
+              minBet={game.rules.minBet}
+              maxBet={game.rules.maxBet}
+              onPlaceBet={(amount) => submitBet(user.uid, amount)}
+              alreadyBet={false}
+            />
+          )}
 
-        {isBetting && localPlayer && localPlayer.hands[0]?.bet > 0 && (
-          <BettingArea
-            chips={localPlayer.chips}
-            minBet={game.rules.minBet}
-            maxBet={game.rules.maxBet}
-            onPlaceBet={() => {}}
-            alreadyBet={true}
-            currentBetAmount={localPlayer.hands[0].bet}
-          />
-        )}
+          {isBetting && localPlayer && localPlayer.hands[0]?.bet > 0 && (
+            <BettingArea
+              chips={localPlayer.chips}
+              minBet={game.rules.minBet}
+              maxBet={game.rules.maxBet}
+              onPlaceBet={() => {}}
+              alreadyBet={true}
+              currentBetAmount={localPlayer.hands[0].bet}
+            />
+          )}
 
-        {isBetting && allBet && isHost && (
-          <div className="absolute bottom-4 right-4 z-20">
-            <Button onClick={handleStartRound}>Deal Cards</Button>
-          </div>
-        )}
+          {/* Host buttons bottom-right */}
+          {isBetting && allBet && isHost && (
+            <div className="absolute bottom-16 right-8 z-20">
+              <Button onClick={handleStartRound}>Deal Cards</Button>
+            </div>
+          )}
 
-        {game.phase === 'round_end' && !game.gameOver && isHost && (
-          <div className="absolute bottom-4 right-4 z-20">
-            <Button onClick={async () => {
-              const next = startNewRound(game)
-              await updateGameDoc(game.id, { ...next, shoe: next.shoe as any, players: next.players })
-            }}>New Round</Button>
-          </div>
-        )}
-      </div>
-    </TableFelt>
+          {game.phase === 'round_end' && !game.gameOver && isHost && (
+            <div className="absolute bottom-16 right-8 z-20">
+              <Button onClick={async () => {
+                const next = startNewRound(game)
+                await updateGameDoc(game.id, { ...next, shoe: next.shoe as any, players: next.players })
+              }}>New Round</Button>
+            </div>
+          )}
+        </div>
+      </TableFelt>
+    </div>
   )
 }
