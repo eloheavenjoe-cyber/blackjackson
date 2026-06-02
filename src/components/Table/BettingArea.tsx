@@ -14,6 +14,8 @@ type Props = {
 }
 
 const allDenoms: ChipValue[] = [10, 25, 50, 100, 250, 500]
+const MAX_VISIBLE = 15
+const PER_ROW = 5
 
 function breakdownDenoms(amount: number): ChipValue[] {
   const denoms: ChipValue[] = [500, 250, 100, 50, 25, 10]
@@ -28,19 +30,43 @@ function breakdownDenoms(amount: number): ChipValue[] {
   return result
 }
 
-function ChipRow({ values, onClick }: { values: ChipValue[]; onClick?: (i: number) => void }) {
-  if (values.length === 0) return null
+function ChipArea({ values, onClick }: { values: ChipValue[]; onClick?: (i: number) => void }) {
+  if (values.length === 0) {
+    return (
+      <div className="w-48 h-20 bg-black/20 rounded-xl border border-white/5 flex items-center justify-center">
+        <span className="text-white/15 text-xs">no chips</span>
+      </div>
+    )
+  }
+
+  const visible = values.slice(0, MAX_VISIBLE)
+  const hidden = values.length - MAX_VISIBLE
+
+  const rows: ChipValue[][] = []
+  for (let i = 0; i < visible.length; i += PER_ROW) {
+    rows.push(visible.slice(i, i + PER_ROW))
+  }
+
   return (
-    <div className="flex -space-x-3 items-center">
-      {values.map((v, i) => (
-        <div key={i} className="relative" style={{ zIndex: i }}>
-          <Chip
-            value={v}
-            size="table"
-            onClick={onClick ? () => onClick(i) : undefined}
-          />
-        </div>
-      ))}
+    <div className="w-48 bg-black/20 rounded-xl border border-white/5 flex flex-col items-center justify-center py-2" style={{ minHeight: 80 }}>
+      <div className="flex flex-col items-center" style={{ gap: 2 }}>
+        {rows.map((row, ri) => (
+          <div key={ri} className="flex -space-x-1.5 justify-center">
+            {row.map((v, ci) => (
+              <div key={ri * PER_ROW + ci} style={{ zIndex: ci }}>
+                <Chip
+                  value={v}
+                  size="small"
+                  onClick={onClick ? () => onClick(ri * PER_ROW + ci) : undefined}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {hidden > 0 && (
+        <span className="text-gold/50 text-xs mt-1">+{hidden} more</span>
+      )}
     </div>
   )
 }
@@ -50,11 +76,12 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
   const bet = chipStack.reduce((a, b) => a + b, 0)
 
   if (alreadyBet) {
+    const values = breakdownDenoms(currentBetAmount ?? 0)
     return (
       <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-3 pb-6 z-20">
         <div className="flex items-center gap-3 bg-black/40 backdrop-blur rounded-2xl px-5 py-3 border border-gold/20">
           <span className="text-gold/60 text-xs uppercase tracking-wider">Bet placed</span>
-          <ChipRow values={breakdownDenoms(currentBetAmount ?? 0)} />
+          <ChipArea values={values} />
           <span className="text-white text-sm font-bold">{currentBetAmount}</span>
         </div>
       </div>
@@ -94,8 +121,8 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
             Clear
           </button>
           <div className="flex flex-col items-center gap-1">
-            <ChipRow values={chipStack} onClick={removeChip} />
-            <span className="text-gold font-bold text-sm min-w-[3ch] text-center">{bet || '0'}</span>
+            <ChipArea values={chipStack} onClick={removeChip} />
+            <span className="text-gold font-bold text-sm">{bet || '0'}</span>
           </div>
         </div>
 
