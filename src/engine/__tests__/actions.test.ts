@@ -18,6 +18,14 @@ function setup() {
   game = startGame(game)
   game = setPlayerBet(game, 'p1', 50)
   game = setPlayerBet(game, 'p2', 50)
+  game = {
+    ...game,
+    rules: { ...game.rules, decks: 1 },
+    shoe: Array.from({ length: 40 }, (_, i) => ({
+      suit: ['H', 'D', 'C', 'S'][i % 4] as 'H' | 'D' | 'C' | 'S',
+      rank: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J'][i % 10] as '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J',
+    })),
+  }
   game = dealInitialHands(game)
   return game
 }

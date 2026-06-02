@@ -78,7 +78,7 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
   if (alreadyBet) {
     const values = breakdownDenoms(currentBetAmount ?? 0)
     return (
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-3 pb-6 z-20">
+      <div className="flex justify-center items-center gap-3 py-3">
         <div className="flex items-center gap-3 bg-black/40 backdrop-blur rounded-2xl px-5 py-3 border border-gold/20">
           <span className="text-gold/60 text-xs uppercase tracking-wider">Bet placed</span>
           <ChipArea values={values} />
@@ -90,7 +90,7 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
 
   if (chips < minBet) {
     return (
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-6 z-20">
+      <div className="flex justify-center py-3">
         <p className="text-gray-500 text-sm">Not enough chips to bet</p>
       </div>
     )
@@ -114,7 +114,7 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
   }
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20 pb-6">
+    <div className="py-3">
       <div className="flex items-center justify-center gap-6">
         <div className="flex items-center gap-3">
           <button onClick={clear} className="text-gray-400 hover:text-white text-xs cursor-pointer uppercase tracking-wider">
