@@ -11,6 +11,23 @@ function draw(state: GameState): { state: GameState; card: import('./types').Car
   return { state: { ...state, shoe: remaining }, card }
 }
 
+function advanceHand(state: GameState): GameState {
+  const player = state.players[state.currentTurn]
+  const nextHand = player.activeHandIndex + 1
+  if (nextHand < player.hands.length) {
+    return {
+      ...state,
+      players: state.players.map((p, i) =>
+        i === state.currentTurn
+          ? { ...p, activeHandIndex: nextHand }
+          : p
+      ),
+      turnStartedAt: Date.now(),
+    }
+  }
+  return advanceTurn(state)
+}
+
 function advanceTurn(state: GameState): GameState {
   const nextTurn = getNextActivePlayer(state, state.currentTurn)
   if (nextTurn === -1) {
@@ -94,7 +111,7 @@ export function processAction(state: GameState, action: PlayerAction): GameState
               : p
           ),
         }
-        return advanceTurn(nextState)
+        return advanceHand(nextState)
       }
       return updated
     }
@@ -113,7 +130,7 @@ export function processAction(state: GameState, action: PlayerAction): GameState
             : p
         ),
       }
-      return advanceTurn(stood)
+      return advanceHand(stood)
     }
 
     case 'double': {
@@ -158,9 +175,9 @@ export function processAction(state: GameState, action: PlayerAction): GameState
               : p
           ),
         }
-        return advanceTurn(busted)
+        return advanceHand(busted)
       }
-      return advanceTurn(doubled)
+      return advanceHand(doubled)
     }
 
     case 'surrender': {
@@ -182,7 +199,7 @@ export function processAction(state: GameState, action: PlayerAction): GameState
             : p
         ),
       }
-      return advanceTurn(surrendered)
+      return advanceHand(surrendered)
     }
 
     case 'split': {
@@ -232,7 +249,7 @@ export function processAction(state: GameState, action: PlayerAction): GameState
               : p
           ),
         }
-        return advanceTurn(aceStood)
+        return advanceHand(aceStood)
       }
 
       return splitState

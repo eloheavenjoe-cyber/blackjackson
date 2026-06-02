@@ -164,6 +164,30 @@ describe('processAction - surrender', () => {
   })
 })
 
+describe('processAction - split hand navigation', () => {
+  it('advances activeHandIndex after first split hand stands', () => {
+    let game = createGame('T11', 'host', { ...rules, splits: 'once' })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: '8' }, { suit: 'D', rank: '8' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    game = processAction(game, { type: 'split', playerId: 'p1' })
+    expect(game.players[0].hands).toHaveLength(2)
+    expect(game.players[0].activeHandIndex).toBe(0)
+    game = processAction(game, { type: 'stand', playerId: 'p1' })
+    expect(game.currentTurn).toBe(0)
+    expect(game.players[0].activeHandIndex).toBe(1)
+  })
+})
+
 describe('processAction - insurance', () => {
   it('insurance_yes deducts half bet and marks decided', () => {
     let game = createGame('T9', 'host', { ...rules, insurance: true })
