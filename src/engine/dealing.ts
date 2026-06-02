@@ -1,5 +1,6 @@
 import type { GameState } from './types'
 import { drawCard, needsReshuffle, reshuffleDiscard } from './shoe'
+import { evaluateHand } from './hand'
 
 function draw(state: GameState): { state: GameState; card: import('./types').Card | null } {
   if (needsReshuffle(state.shoe, state.rules.decks)) {
@@ -49,14 +50,22 @@ export function dealInitialHands(state: GameState): GameState {
   }
 
   const dealerUpcard = currentState.dealerHand[0]
+  const dealerHole = currentState.dealerHand[1]
+  const dealerEval = evaluateHand(currentState.dealerHand)
+  const dealerBJ = dealerEval.isBlackjack
 
-  if (currentState.rules.insurance && dealerUpcard.rank === 'A') {
-    return { ...currentState, phase: 'insurance' }
+  if (dealerUpcard.rank === 'A') {
+    if (currentState.rules.insurance) {
+      return { ...currentState, phase: 'insurance' }
+    }
+    if (dealerBJ) {
+      return { ...currentState, phase: 'settlement' }
+    }
+    return { ...currentState, phase: 'playing', currentTurn: 0 }
   }
 
   if (['10', 'J', 'Q', 'K'].includes(dealerUpcard.rank)) {
-    const holeCard = currentState.dealerHand[1]
-    if (holeCard.rank === 'A') {
+    if (dealerBJ) {
       return { ...currentState, phase: 'settlement' }
     }
   }

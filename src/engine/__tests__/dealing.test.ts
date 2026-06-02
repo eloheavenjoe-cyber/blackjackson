@@ -47,6 +47,23 @@ describe('dealInitialHands', () => {
     }
   })
 
+  it('transitions to settlement when dealer shows Ace and has blackjack, insurance off', () => {
+    let game = createGame('TEST', 'host-1', { ...defaultRules, insurance: false })
+    game = addPlayer(game, makePlayer('p1', 'Alice'))
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      shoe: [
+        { suit: 'H', rank: '7' }, { suit: 'D', rank: 'A' },
+        { suit: 'H', rank: '8' }, { suit: 'S', rank: '10' },
+        ...Array(308).fill({ suit: 'H', rank: '2' }),
+      ],
+    }
+    game = dealInitialHands(game)
+    expect(game.phase).toBe('settlement')
+  })
+
   it('transitions to playing phase normally', () => {
     for (let attempt = 0; attempt < 5; attempt++) {
       let game = createGame('ABC123', 'host-1', { ...defaultRules, insurance: false })
