@@ -99,6 +99,15 @@ export function processAction(state: GameState, action: PlayerAction): GameState
       const player = state.players[playerIndex]
       const hand = player.hands[player.activeHandIndex]
       if (hand.cards.length !== 2) throw new Error('Can only double on initial two cards')
+      if (state.rules.doubleDown === 'none') {
+        throw new Error('Double down is not allowed')
+      }
+      if (state.rules.doubleDown === '9-10-11') {
+        const value = evaluateHand(hand.cards).value
+        if (value !== 9 && value !== 10 && value !== 11) {
+          throw new Error('Double down only allowed on 9, 10, or 11')
+        }
+      }
       if (player.chips < hand.bet) throw new Error('Insufficient chips to double')
       const { state: s1, card } = draw(state)
       if (!card) throw new Error('Shoe empty')

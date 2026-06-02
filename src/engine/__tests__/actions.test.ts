@@ -13,8 +13,8 @@ const rules: GameRules = {
 
 function setup() {
   let game = createGame('T1', 'host', rules)
-  game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0 })
-  game = addPlayer(game, { id: 'p2', name: 'Bob', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0 })
+  game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+  game = addPlayer(game, { id: 'p2', name: 'Bob', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
   game = startGame(game)
   game = setPlayerBet(game, 'p1', 50)
   game = setPlayerBet(game, 'p2', 50)
@@ -34,7 +34,7 @@ describe('processAction - stand', () => {
 describe('processAction - split', () => {
   it('splits a pair into two hands', () => {
     let game = createGame('T2', 'host', rules)
-    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0 })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
     game = startGame(game)
     game = setPlayerBet(game, 'p1', 50)
     game = {
@@ -50,5 +50,77 @@ describe('processAction - split', () => {
     expect(game.players[0].hands).toHaveLength(2)
     expect(game.players[0].hands[0].cards).toHaveLength(2)
     expect(game.players[0].hands[1].cards).toHaveLength(2)
+  })
+})
+
+describe('processAction - double', () => {
+  it('blocks double when rules.doubleDown is none', () => {
+    let game = createGame('T3', 'host', { ...rules, doubleDown: 'none' })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: '9' }, { suit: 'D', rank: '2' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    expect(() => processAction(game, { type: 'double', playerId: 'p1' })).toThrow('Double down is not allowed')
+  })
+
+  it('blocks double on 8 when rules.doubleDown is 9-10-11', () => {
+    let game = createGame('T4', 'host', { ...rules, doubleDown: '9-10-11' })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: '5' }, { suit: 'D', rank: '3' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    expect(() => processAction(game, { type: 'double', playerId: 'p1' })).toThrow('Double down only allowed on 9, 10, or 11')
+  })
+
+  it('allows double on 10 when rules.doubleDown is 9-10-11', () => {
+    let game = createGame('T5', 'host', { ...rules, doubleDown: '9-10-11' })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: '5' }, { suit: 'D', rank: '5' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    game = processAction(game, { type: 'double', playerId: 'p1' })
+    expect(game.players[0].hands[0].isDoubled).toBe(true)
+    expect(game.players[0].hands[0].bet).toBe(100)
+  })
+
+  it('blocks double after hitting (more than 2 cards)', () => {
+    let game = createGame('T6', 'host', rules)
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 50)
+    game = {
+      ...game,
+      phase: 'playing' as const,
+      currentTurn: 0,
+      players: game.players.map((p) => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: '5' }, { suit: 'D', rank: '3' }, { suit: 'C', rank: '2' }], bet: 50, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    expect(() => processAction(game, { type: 'double', playerId: 'p1' })).toThrow()
   })
 })
