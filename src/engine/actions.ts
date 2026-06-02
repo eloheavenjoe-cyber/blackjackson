@@ -31,6 +31,27 @@ function getNextActivePlayer(state: GameState, from: number): number {
   return -1
 }
 
+export function allInsuranceDecided(state: GameState): boolean {
+  return state.players.every((p) => p.insuranceDecided === true)
+}
+
+export function resolveInsurance(state: GameState): GameState {
+  const dealerEval = evaluateHand(state.dealerHand)
+  const dealerBJ = dealerEval.isBlackjack
+
+  const players = state.players.map((player) => {
+    if (dealerBJ && player.insuranceBet > 0) {
+      return { ...player, chips: player.chips + player.insuranceBet + player.insuranceBet * 2, insuranceBet: 0 }
+    }
+    return { ...player, insuranceBet: 0 }
+  })
+
+  if (dealerBJ) {
+    return { ...state, players, phase: 'settlement' as const, currentTurn: -1 }
+  }
+  return { ...state, players, phase: 'playing' as const, currentTurn: 0, turnStartedAt: Date.now() }
+}
+
 export function processAction(state: GameState, action: PlayerAction): GameState {
   const playerIndex = state.players.findIndex((p) => p.id === action.playerId)
   if (playerIndex === -1) throw new Error('Player not found')
@@ -215,6 +236,38 @@ export function processAction(state: GameState, action: PlayerAction): GameState
       }
 
       return splitState
+    }
+
+    case 'insurance_yes': {
+      if (state.phase !== 'insurance') throw new Error('Not in insurance phase')
+      const player = state.players[playerIndex]
+      const hand = player.hands[0]
+      const insuranceAmount = Math.floor(hand.bet / 2)
+      if (player.chips < insuranceAmount) throw new Error('Insufficient chips for insurance')
+      const updated = {
+        ...state,
+        players: state.players.map((p, i) =>
+          i === playerIndex
+            ? { ...p, chips: p.chips - insuranceAmount, insuranceBet: insuranceAmount, insuranceDecided: true }
+            : p
+        ),
+      }
+      if (allInsuranceDecided(updated)) return resolveInsurance(updated)
+      return updated
+    }
+
+    case 'insurance_no': {
+      if (state.phase !== 'insurance') throw new Error('Not in insurance phase')
+      const updated = {
+        ...state,
+        players: state.players.map((p, i) =>
+          i === playerIndex
+            ? { ...p, insuranceBet: 0, insuranceDecided: true }
+            : p
+        ),
+      }
+      if (allInsuranceDecided(updated)) return resolveInsurance(updated)
+      return updated
     }
 
     default:

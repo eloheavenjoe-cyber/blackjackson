@@ -163,3 +163,49 @@ describe('processAction - surrender', () => {
     expect(result.players[0].chips).toBe(975) // 950 + 25 (half bet returned)
   })
 })
+
+describe('processAction - insurance', () => {
+  it('insurance_yes deducts half bet and marks decided', () => {
+    let game = createGame('T9', 'host', { ...rules, insurance: true })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = addPlayer(game, { id: 'p2', name: 'Bob', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 100)
+    game = setPlayerBet(game, 'p2', 100)
+    game = {
+      ...game,
+      phase: 'insurance' as const,
+      currentTurn: 0,
+      players: game.players.map(p => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: 'K' }, { suit: 'D', rank: '8' }], bet: 100, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    const result = processAction(game, { type: 'insurance_yes', playerId: 'p1' })
+    expect(result.players[0].insuranceBet).toBe(50)
+    expect(result.players[0].insuranceDecided).toBe(true)
+    expect(result.players[0].chips).toBe(850)
+  })
+
+  it('insurance_no marks decided without deducting', () => {
+    let game = createGame('T10', 'host', { ...rules, insurance: true })
+    game = addPlayer(game, { id: 'p1', name: 'Alice', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = addPlayer(game, { id: 'p2', name: 'Bob', seat: 0, hands: [], activeHandIndex: 0, chips: 1000, isActive: true, insuranceBet: 0, insuranceDecided: false })
+    game = startGame(game)
+    game = setPlayerBet(game, 'p1', 100)
+    game = setPlayerBet(game, 'p2', 100)
+    game = {
+      ...game,
+      phase: 'insurance' as const,
+      currentTurn: 0,
+      players: game.players.map(p => ({
+        ...p,
+        hands: [{ cards: [{ suit: 'H', rank: 'K' }, { suit: 'D', rank: '8' }], bet: 100, isDoubled: false, isSurrendered: false, isStood: false, result: 'pending' as const, payout: 0 }],
+      })),
+    }
+    const result = processAction(game, { type: 'insurance_no', playerId: 'p1' })
+    expect(result.players[0].insuranceBet).toBe(0)
+    expect(result.players[0].insuranceDecided).toBe(true)
+    expect(result.players[0].chips).toBe(900) // unchanged (1000 - 100 bet)
+  })
+})
