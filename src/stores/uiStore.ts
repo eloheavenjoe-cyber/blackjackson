@@ -3,8 +3,8 @@ import { create } from 'zustand'
 type UIState = {
   soundEnabled: boolean
   toggleSound: () => void
-  currentView: 'lobby' | 'waiting' | 'table'
-  setView: (view: 'lobby' | 'waiting' | 'table') => void
+  currentView: 'lobby' | 'waiting'
+  setView: (view: 'lobby' | 'waiting') => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
