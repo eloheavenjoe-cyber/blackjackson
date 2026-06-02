@@ -19,6 +19,29 @@ export function useGameSync() {
   }, [roomCode, setGame])
 
   useEffect(() => {
+    if (!game || !isHost || !user) return
+    if (game.phase !== 'playing') return
+    if (game.currentTurn < 0) return
+    if (!game.turnStartedAt || game.turnTimeLimit <= 0) return
+
+    const currentPlayer = game.players[game.currentTurn]
+    if (!currentPlayer) return
+
+    const elapsed = Date.now() - game.turnStartedAt
+    const remaining = game.turnTimeLimit * 1000 - elapsed
+    if (remaining <= 0) return
+
+    const timer = setTimeout(async () => {
+      const current = useGameStore.getState().game
+      if (!current || current.phase !== 'playing' || current.currentTurn !== game.currentTurn) return
+      const updated = processAction(current, { type: 'stand', playerId: currentPlayer.id })
+      await updateGameDoc(current.id, { ...updated, shoe: updated.shoe as any, players: updated.players })
+    }, remaining)
+
+    return () => clearTimeout(timer)
+  }, [game?.currentTurn, game?.turnStartedAt, game?.turnTimeLimit, game?.phase, isHost, user])
+
+  useEffect(() => {
     return () => {
       if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current)
     }

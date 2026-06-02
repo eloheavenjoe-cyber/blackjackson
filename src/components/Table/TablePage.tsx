@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useGameSync } from '../../hooks/useGameSync'
 import { useGameStore } from '../../stores/gameStore'
@@ -9,7 +9,7 @@ import { PlayerPosition } from './PlayerPosition'
 import { RoundResult } from './RoundResult'
 import { Button } from '../Shared/Button'
 import { updateGameDoc } from '../../firebase/games'
-import { dealInitialHands, allBetsPlaced, startNewRound } from '../../engine'
+import { dealInitialHands, allBetsPlaced, needsReshuffle } from '../../engine'
 
 export function TablePage() {
   const { roomCode: paramCode } = useParams<{ roomCode: string }>()
@@ -18,6 +18,8 @@ export function TablePage() {
   const { submitAction, submitBet } = useGameSync()
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
+  const [showReshuffle, setShowReshuffle] = useState(false)
+  const prevRoundRef = useRef(game?.roundNumber)
 
   useEffect(() => {
     if (paramCode) setRoomCode(paramCode.toUpperCase())
@@ -31,6 +33,24 @@ export function TablePage() {
       setNotFound(false)
     }
   }, [game, paramCode])
+
+  useEffect(() => {
+    if (game && prevRoundRef.current !== undefined && game.roundNumber !== prevRoundRef.current) {
+      if (needsReshuffle(game.shoe, game.rules.decks)) {
+        setShowReshuffle(true)
+        const timer = setTimeout(() => setShowReshuffle(false), 2000)
+        return () => clearTimeout(timer)
+      }
+    }
+    prevRoundRef.current = game?.roundNumber
+  }, [game])
+
+  useEffect(() => {
+    if (game?.gameOver) {
+      const timer = setTimeout(() => navigate('/'), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [game?.gameOver, navigate])
 
   if (notFound) {
     return (
@@ -49,6 +69,7 @@ export function TablePage() {
   const localPlayer = game.players.find((p) => p.id === user.uid)
   const isBetting = game.phase === 'betting'
   const allBet = allBetsPlaced(game)
+  const dealerUpcard = game.dealerHand.length > 0 ? game.dealerHand[0].rank : null
 
   async function handleStartRound() {
     if (!game || !isHost) return
@@ -59,6 +80,12 @@ export function TablePage() {
   return (
     <TableFelt>
       <div className="h-full flex flex-col">
+        {showReshuffle && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gold/90 text-gray-900 font-bold px-6 py-2 rounded-lg z-10 animate-pulse">
+            Reshuffling...
+          </div>
+        )}
+
         <div className="flex items-center justify-between px-6 py-3">
           <div className="text-gold text-sm font-mono">Round {game.roundNumber}</div>
           <div className="text-white text-sm">Room: {game.id}</div>
@@ -73,20 +100,40 @@ export function TablePage() {
 
         <RoundResult hands={localPlayer?.hands ?? []} visible={game.phase === 'round_end'} />
 
-        <div className="flex-1 flex items-end justify-center gap-3 px-4 pb-6 flex-wrap">
-          {game.players.map((player) => (
-            <PlayerPosition
-              key={player.id}
-              player={player}
-              isCurrentTurn={game.currentTurn === player.seat}
-              isLocalPlayer={player.id === user.uid}
-              phase={game.phase}
-              turnTimeLimit={game.turnTimeLimit}
-              turnStartedAt={game.turnStartedAt}
-              onAction={submitAction}
-            />
-          ))}
-        </div>
+        {game.gameOver && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <p className="text-3xl font-black text-red-400">Game Over</p>
+              <p className="text-gray-400">All players have busted out.</p>
+              <Button onClick={() => navigate('/')}>Back to Lobby</Button>
+            </div>
+          </div>
+        )}
+
+        {!game.gameOver && (
+          <div className="flex-1 flex items-end justify-center gap-3 px-4 pb-6 flex-wrap">
+            {game.players.map((player) => (
+              <PlayerPosition
+                key={player.id}
+                player={player}
+                isCurrentTurn={game.currentTurn === player.seat}
+                isLocalPlayer={player.id === user.uid}
+                phase={game.phase}
+                turnTimeLimit={game.turnTimeLimit}
+                turnStartedAt={game.turnStartedAt}
+                onAction={submitAction}
+                rules={game.rules}
+                dealerUpcard={dealerUpcard}
+              />
+            ))}
+          </div>
+        )}
+
+        {game.phase === 'insurance' && isHost && (
+          <div className="flex justify-center pb-4">
+            <p className="text-gold text-sm">Waiting for insurance decisions...</p>
+          </div>
+        )}
 
         {isBetting && !allBet && localPlayer && (
           <div className="flex justify-center gap-3 pb-4">
@@ -105,15 +152,6 @@ export function TablePage() {
         {isBetting && allBet && isHost && (
           <div className="flex justify-center pb-4">
             <Button onClick={handleStartRound}>Deal Cards</Button>
-          </div>
-        )}
-
-        {game.phase === 'round_end' && isHost && (
-          <div className="flex justify-center pb-4">
-            <Button onClick={async () => {
-              const next = startNewRound(game)
-              await updateGameDoc(game.id, { ...next, shoe: next.shoe as any, players: next.players })
-            }}>New Round</Button>
           </div>
         )}
       </div>
