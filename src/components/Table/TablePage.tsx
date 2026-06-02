@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useGameSync } from '../../hooks/useGameSync'
 import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
+import { useUIStore } from '../../stores/uiStore'
 import { TableFelt } from './TableFelt'
 import { DealerArea } from './DealerArea'
 import { PlayerPosition } from './PlayerPosition'
@@ -13,13 +14,20 @@ import { dealInitialHands, allBetsPlaced, needsReshuffle, settleHands, settleIns
 
 export function TablePage() {
   const { roomCode: paramCode } = useParams<{ roomCode: string }>()
-  const { game, isHost, setRoomCode } = useGameStore()
+  const { game, isHost, setRoomCode, reset: resetGame } = useGameStore()
   const { user } = useAuthStore()
+  const { setView } = useUIStore()
   const { submitAction, submitBet } = useGameSync()
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
   const prevRoundRef = useRef(game?.roundNumber)
+
+  function goToLobby() {
+    resetGame()
+    setView('lobby')
+    navigate('/')
+  }
 
   useEffect(() => {
     if (paramCode) setRoomCode(paramCode.toUpperCase())
@@ -47,7 +55,7 @@ export function TablePage() {
 
   useEffect(() => {
     if (game?.gameOver) {
-      const timer = setTimeout(() => navigate('/'), 5000)
+      const timer = setTimeout(() => goToLobby(), 5000)
       return () => clearTimeout(timer)
     }
   }, [game?.gameOver, navigate])
@@ -57,7 +65,7 @@ export function TablePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-gray-400">Game not found or has ended.</p>
-          <Button onClick={() => navigate('/')}>Back to Lobby</Button>
+          <Button onClick={goToLobby}>Back to Lobby</Button>
         </div>
       </div>
     )
@@ -110,7 +118,7 @@ export function TablePage() {
             <div className="text-center space-y-4">
               <p className="text-3xl font-black text-red-400">Game Over</p>
               <p className="text-gray-400">All players have busted out.</p>
-              <Button onClick={() => navigate('/')}>Back to Lobby</Button>
+              <Button onClick={goToLobby}>Back to Lobby</Button>
             </div>
           </div>
         )}
