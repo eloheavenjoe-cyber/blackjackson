@@ -58,7 +58,6 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
         style={{ perspective: 600 }}
       >
         {dealerHand.map((card, i) => {
-          const isHoleCard = i === 1 && !showHoleCard
           const cardDelay = dealIndex != null
             ? (dealIndex + i) * 0.15
             : i * 0.2

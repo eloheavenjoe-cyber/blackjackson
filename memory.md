@@ -136,6 +136,9 @@ Tests pass: `npx vitest run`
 - ~~Action buttons clipped~~ — Moved outside `TableFelt`'s `overflow: hidden` into arc-aligned strip below table. Always visible.
 - ~~PlayerAvatar circles~~ — Removed from player name display. Only text names now.
 - ~~Chip consolidation~~ — BettingArea auto-consolidates chips into higher denominations (greedy via `breakdownDenoms`), with safety guard against value loss.
+- ~~Card dealing animation~~ — Cards fly from shoe position (center-top of felt), sequential dealing order across players and dealer
+- ~~Hole card reveal~~ — 3D flip animation on dealer's second card using CSS rotateY + backface-visibility
+- ~~Chip stacking animation~~ — Framer-motion AnimatePresence entry/exit animations in ChipStack when pending bets change
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
