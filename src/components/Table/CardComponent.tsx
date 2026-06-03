@@ -31,7 +31,7 @@ function CardFace({ card, size = 'md' }: { card?: Card; size?: 'sm' | 'md' | 'lg
     return <div className="w-full h-full rounded-lg border border-white/20 bg-white/5" />
   }
   return (
-    <div className={`w-full h-full rounded-lg border border-gray-300 flex flex-col p-1 ${suitColors[card.suit]}`}>
+    <div className={`w-full h-full rounded-lg border border-gray-300 bg-white flex flex-col p-1 ${suitColors[card.suit]}`}>
       <div className={`${textSizes[size]} font-bold leading-none`}>{card.rank}</div>
       <div className={`${textSizes[size]} leading-none`}>{suitSymbols[card.suit]}</div>
       <div className="flex-1 flex items-center justify-center">
@@ -90,7 +90,7 @@ export function CardComponent({
       </div>
       {/* Face-up (front) — visible at rotateY=180 */}
       <div
-        className="absolute inset-0 rounded-lg"
+        className="absolute inset-0 rounded-lg bg-white"
         style={{
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',

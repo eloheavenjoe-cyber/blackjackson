@@ -164,6 +164,16 @@ export function TablePage() {
               <div className="text-white/25 text-xs">{game.players.length} players</div>
             </div>
 
+            {/* Casino rules text */}
+            <div className="flex justify-center py-1 relative z-10 pointer-events-none">
+              <span className="text-gold/25 text-[10px] font-serif tracking-[0.15em] uppercase">
+                Blackjack pays {game.rules.blackjackPayout}
+                {game.rules.insurance ? ' \u00B7 Insurance pays 2:1' : ''}
+                {game.rules.surrender !== 'none' ? ' \u00B7 Surrender available' : ''}
+                {' \u00B7 Dealer '}{game.rules.dealerSoft17 === 'stand' ? 'stands' : 'hits'} on soft 17
+              </span>
+            </div>
+
             {/* Game over overlay */}
             {game.gameOver && (
               <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/50">
@@ -229,7 +239,7 @@ export function TablePage() {
       {!game.gameOver && (
         <div
           className="relative mx-auto -mt-1"
-          style={{ width: dims.width }}
+          style={{ width: dims.width, minHeight: 32 }}
         >
           {game.players.map((player, i) => (
             <div

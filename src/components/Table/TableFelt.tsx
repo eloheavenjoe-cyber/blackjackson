@@ -32,7 +32,7 @@ export function TableFelt({ children }: { children: ReactNode }) {
   return (
     <div
       className="relative mx-auto"
-      style={{ width: 'min(92vw, 900px)', height: 'min(55vh, 480px)' }}
+      style={{ width: 'min(92vw, 990px)', height: 'min(55vh, 528px)' }}
     >
       <div
         className="absolute inset-0"
