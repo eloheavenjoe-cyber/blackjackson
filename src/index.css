@@ -29,3 +29,10 @@
 @utility text-shadow-glow {
   text-shadow: 0 0 10px rgba(212, 168, 67, 0.5);
 }
+
+@keyframes lamp-flicker {
+  0%, 100% { opacity: 1; }
+  35% { opacity: 0.94; }
+  50% { opacity: 0.92; }
+  65% { opacity: 0.95; }
+}
