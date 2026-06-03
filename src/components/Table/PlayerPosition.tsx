@@ -1,5 +1,4 @@
 import type { PlayerState, GamePhase, GameRules } from '../../engine/types'
-import { PlayerAvatar } from '../Shared/PlayerAvatar'
 import { CardHand } from './CardHand'
 import { ActionButtons } from './ActionButtons'
 import { TurnTimer } from './TurnTimer'
@@ -81,18 +80,6 @@ export function PlayerPosition({
         </div>
       )}
 
-      <div className="flex flex-col items-center mt-1">
-        <div className="flex items-center gap-1">
-          <PlayerAvatar name={player.name} seat={player.seat} size="sm" isActive={isCurrentTurn} />
-          <span className="text-white text-xs font-medium">
-            {player.name}
-            {player.isActive === false && (
-              <span className="text-gray-500 ml-1">(Away)</span>
-            )}
-          </span>
-        </div>
-        <span className="text-gold text-xs">{player.chips} chips</span>
-      </div>
     </div>
   )
 }

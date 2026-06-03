@@ -181,6 +181,33 @@ export function TablePage() {
         </TableFelt>
       </div>
 
+      {/* Player info strip */}
+      {!game.gameOver && (
+        <div
+          className="relative mx-auto"
+          style={{ width: dims.width }}
+        >
+          {game.players.map((player, i) => (
+            <div
+              key={player.id}
+              className="absolute flex flex-col items-center"
+              style={{
+                left: positions[i]?.x ?? '50%',
+                transform: 'translateX(-50%)',
+              }}
+            >
+              <span className="text-white/80 text-xs font-medium whitespace-nowrap">
+                {player.name}
+                {player.isActive === false && (
+                  <span className="text-gray-500 ml-1">(Away)</span>
+                )}
+              </span>
+              <span className="text-gold text-xs">{player.chips} chips</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Round result */}
       <div className="relative z-10 -mt-4">
         <RoundResult hands={localPlayer?.hands ?? []} visible={game.phase === 'round_end'} />
