@@ -6,6 +6,11 @@ import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useUIStore } from '../../stores/uiStore'
 import { useSound } from '../../hooks/useSound'
+import { useChat } from '../../hooks/useChat'
+import { ChatPanel } from '../Chat/ChatPanel'
+import { EmojiFloat } from '../Chat/EmojiFloat'
+import { ChatToggle } from '../Chat/ChatToggle'
+import { useChatStore } from '../../stores/chatStore'
 import { TableFelt, computePositions } from './TableFelt'
 import { DealerArea } from './DealerArea'
 import { PlayerPosition } from './PlayerPosition'
@@ -29,14 +34,18 @@ export function TablePage() {
   const { setView } = useUIStore()
   const { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip, quickBet } = useGameSync()
   const { play } = useSound()
+  const { sendMessage, sendEmoji, sendTip } = useChat(game?.id ?? null)
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
   const [showNoMoreBets, setShowNoMoreBets] = useState(false)
   const [showRoundIntro, setShowRoundIntro] = useState(false)
+  const [emojiFloats, setEmojiFloats] = useState<{ id: string; emoji: string; x: number; y: number }[]>([])
   const prevRoundRef = useRef(game?.roundNumber)
   const prevPhaseRef = useRef(game?.phase)
   const prevTurnRef = useRef(game?.currentTurn)
+  const prevMessageCountRef = useRef(0)
+  const processedEmojiIdsRef = useRef<Set<string>>(new Set())
   const containerRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ width: 800, height: 500 })
 
@@ -131,6 +140,26 @@ export function TablePage() {
     () => shoeOrigin(dims.width, dims.height),
     [dims]
   )
+
+  useEffect(() => {
+    if (!game) return
+    const unsub = useChatStore.subscribe((state) => {
+      const newMessages = state.messages.slice(prevMessageCountRef.current)
+      prevMessageCountRef.current = state.messages.length
+      for (const msg of newMessages) {
+        if (msg.type !== 'emoji') continue
+        const id = `${msg.playerId}-${msg.timestamp}`
+        if (processedEmojiIdsRef.current.has(id)) continue
+        processedEmojiIdsRef.current.add(id)
+        const playerIdx = game.players.findIndex((p) => p.id === msg.playerId)
+        if (playerIdx === -1) continue
+        const pos = positions[playerIdx]
+        if (!pos) continue
+        setEmojiFloats((prev) => [...prev, { id, emoji: msg.text, x: pos.x, y: pos.y }])
+      }
+    })
+    return () => unsub()
+  }, [game, positions])
 
   const dealIndices = useMemo(() => {
     if (!game || game.phase !== 'dealing') return new Map<string, { first: number; second: number }>()
@@ -501,6 +530,31 @@ export function TablePage() {
           }}>New Round</Button>
         )}
       </div>
+
+      {!game.gameOver && (
+        <ChatPanel
+          roomCode={game.id}
+          players={game.players}
+          onSendMessage={sendMessage}
+          onSendEmoji={sendEmoji}
+          onSendTip={(recipientId, amount) => {
+            if (!game) return 'Not connected'
+            return sendTip(recipientId, amount, game.players)
+          }}
+        />
+      )}
+
+      <ChatToggle onClick={() => useChatStore.getState().setIsOpen(true)} />
+
+      {emojiFloats.map((ef) => (
+        <EmojiFloat
+          key={ef.id}
+          emoji={ef.emoji}
+          x={ef.x}
+          y={ef.y}
+          onComplete={() => setEmojiFloats((prev) => prev.filter((e) => e.id !== ef.id))}
+        />
+      ))}
     </div>
   )
 }

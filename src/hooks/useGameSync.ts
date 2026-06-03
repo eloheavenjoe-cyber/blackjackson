@@ -5,6 +5,7 @@ import { subscribeToGame, updateGameDoc, submitBetIntent, getGameDoc, incrementP
 import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound, evaluateHand } from '../engine'
 import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
+import { addChatMessage } from '../firebase/chat'
 import type { PlayerAction, GameState } from '../engine/types'
 
 export function useGameSync() {
@@ -44,6 +45,51 @@ export function useGameSync() {
           } catch (e) {
             // Ignore duplicate/invalid bets
           }
+          deleteDoc(change.doc.ref).catch(() => {})
+        }
+      }
+    })
+    return () => unsub()
+  }, [roomCode, isHost])
+
+  useEffect(() => {
+    if (!roomCode || !isHost) return
+    const tipsCol = collection(db, 'games', roomCode.toUpperCase(), 'tips')
+    const unsub = fsOnSnapshot(tipsCol, async (snapshot) => {
+      const current = await getGameDoc(roomCode)
+      if (!current) return
+      for (const change of snapshot.docChanges()) {
+        if (change.type === 'added') {
+          const data = change.doc.data()
+          const { fromId, toPlayerId, amount } = data
+          const sender = current.players.find((p: any) => p.id === fromId)
+          const recipient = current.players.find((p: any) => p.id === toPlayerId)
+          if (!sender || !recipient) {
+            deleteDoc(change.doc.ref).catch(() => {})
+            continue
+          }
+          if (sender.chips < amount) {
+            addChatMessage(roomCode, {
+              playerId: 'SYSTEM',
+              playerName: 'SYSTEM',
+              text: 'SYSTEM: Tip failed \u2014 insufficient chips.',
+              type: 'system',
+            })
+            deleteDoc(change.doc.ref).catch(() => {})
+            continue
+          }
+          const updatedPlayers = current.players.map((p: any) => {
+            if (p.id === fromId) return { ...p, chips: p.chips - amount }
+            if (p.id === toPlayerId) return { ...p, chips: p.chips + amount }
+            return p
+          })
+          await updateGameDoc(roomCode, { players: updatedPlayers })
+          addChatMessage(roomCode, {
+            playerId: 'SYSTEM',
+            playerName: 'SYSTEM',
+            text: `SYSTEM: ${sender.name} tipped ${amount} chips to ${recipient.name}`,
+            type: 'system',
+          })
           deleteDoc(change.doc.ref).catch(() => {})
         }
       }
