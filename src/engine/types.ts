@@ -17,6 +17,34 @@ export type GamePhase =
   | 'settlement'
   | 'round_end'
 
+export type ChatMessage = {
+  playerId: string
+  playerName: string
+  text: string
+  type: 'message' | 'tip' | 'emoji' | 'system'
+  timestamp: number
+}
+
+export type TipIntent = {
+  fromId: string
+  toPlayerId: string
+  amount: number
+  timestamp: number
+}
+
+export type MusicSource = 'youtube' | 'playlist'
+
+export type MusicState = {
+  source: MusicSource
+  url: string
+  title: string
+  playing: boolean
+  currentTime: number
+  lastCommandAt: number
+}
+
+export type DealerPersona = 'default' | 'lady_gold' | 'mr_velvet' | 'the_house'
+
 export type GameRules = {
   decks: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
   dealerSoft17: 'stand' | 'hit'
@@ -89,4 +117,6 @@ export type GameState = {
   lastActionAt?: Record<string, number>
   gameOver?: boolean
   pendingBets?: Record<string, number>
+  dealerPersona?: DealerPersona
+  music?: MusicState
 }
