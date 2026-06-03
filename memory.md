@@ -9,7 +9,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 ## Tech Stack
 
-- React 18 + TypeScript + Vite
+- React 19 + TypeScript + Vite 7
 - Tailwind CSS v4 + Framer Motion
 - Zustand (state management)
 - Firebase Firestore (game state) + Anonymous Auth
@@ -23,6 +23,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - **3 pages:** Lobby (`/`) → Waiting Room → Table (`/table/:roomCode`)
 - **Game state** in single Firestore document `games/{roomCode}`
 - **Bet intents** via subcollection `games/{code}/bets/{playerId}` — only host writes authoritative game doc
+- **Pending bets** (`pendingBets: Record<string, number>`) synced in game doc — all clients see chips accumulating via `FieldValue.increment`
 - **Room codes** are 6-char alphanumeric (no I/O/0/1)
 - **Auto-advance** via `scheduleNewRound()` (5s timer), called from `writeAndSchedule()` for all write paths
 - **State resolution** centralized in `finalizeState()`: if phase is `'dealer'` or `'settlement'`, chains `playDealer` + `settleHands` + `settleInsurance` before writing
@@ -38,7 +39,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 | `src/engine/game.ts` | `createGame`, `addPlayer`, `startGame`, `setPlayerBet` (with guards), `startNewRound` (reshuffle + 0-chip removal + gameOver) |
 | `src/firebase/config.ts` | Firebase config (real credentials) |
 | `src/firebase/auth.ts` | Anonymous auth |
-| `src/firebase/games.ts` | Firestore CRUD + `submitBetIntent` + `betIntentsCollection` |
+| `src/firebase/games.ts` | Firestore CRUD + `submitBetIntent` + `betIntentsCollection` + `incrementPendingBet`/`clearPendingBet` (atomic FieldValue ops) |
 | `src/stores/authStore.ts` | Zustand: auth user + display name |
 | `src/stores/gameStore.ts` | Zustand: game state, roomCode, isHost, reset |
 | `src/stores/uiStore.ts` | Zustand: sound toggle, currentView (lobby/waiting) |
@@ -52,17 +53,18 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 ## Current UI Layout
 
-- **Half-oval table** — starts at top of screen, `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), felt grain texture (inline SVG pattern), radial highlight, `overflow: hidden`
-- **Dealer** — sits on flat top edge of table with dark backdrop, cards overlap, insurance/blackjack pill badges
-- **Players** — positioned on elliptical arc via `computePositions()` (160°–20° bottom-half, concave-down), cards on felt with dashed gold betting circles
-- **Player info strip** — below the table (outside `overflow: hidden`), arc-aligned X positions, shows name + chip count + (Away) badge. No PlayerAvatar circles.
-- **Action buttons strip** — below the table (outside `overflow: hidden`), arc-aligned X positions, shows `TurnTimer` + `ActionButtons` for local player's turn only. Never clipped.
-- **BettingArea** — below the table in dark floor area (`pt-12` top padding), clickable chip tray (6 denominations) + accumulator + Place Bet button. Chips auto-consolidate into higher denominations (greedy, with safety guard against value loss).
-- **Chip display** — contained area (`w-48`, min-height 80px), chips in rows of 5, overlap within rows, `+N more` overflow indicator, clickable to remove
-- **Host buttons** — Deal Cards / New Round below the table, centered
-- **RoundResult** — per-hand result overlay (WIN/LOSE/BUST/PUSH/BLACKJACK/SURRENDER) between dealer and table
-- **Game Over** — full overlay with backdrop blur, redirects to lobby
-- **Back to Lobby** — resets both gameStore and uiStore before navigating (prevents WaitingRoom redirect loop)
+- **Table size** — `min(92vw, 990px)` × `min(55vh, 528px)`, half-oval with `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), felt grain texture, radial highlight, `overflow: hidden`
+- **Dealer** — sits on flat top edge of table with dark backdrop. Cards fly in from shoe position. Hole card uses 3D flip (rotateY + backface-visibility) synced to hand value reveal via `flipping`/`flipComplete` states.
+- **Players** — positioned on elliptical arc via `computePositions()` (160°–20° concave-down). Cards deal sequentially from shoe origin. Betting circles have dashed gold borders with breathing glow on active turn; ring glow intensity scales with bet amount.
+- **Player info strip** — below table, `minHeight: 32` to reserve space, arc-aligned X positions, shows name + animated chip count + (Away) badge.
+- **Action buttons strip** — in document flow below info strip (`mt-2`), arc-aligned via `paddingLeft` + `-translate-x-1/2`. Never clipped.
+- **BettingArea** — `pt-20` below table. Chip tray (6 denominations) + pending bet amount + Clear + Place Bet. No accumulator container — chips render on the table felt via `ChipStack` with spring entry/exit animations.
+- **Casino rules text** — 3-tier gold text centered on felt at `top: 8%`: "Blackjack pays 3 to 2" (bold 13px), "Dealer must stand on 17 and draw to 16" (10px), "Insurance pays 2 to 1" (9px, conditional).
+- **No More Bets sweep** — red banner slides in from top when phase hits `dealing`, auto-dismisses after 1s.
+- **Host buttons** — Deal Cards / New Round below the table, centered.
+- **RoundResult** — per-result animations: BJ burst (scale 0→1.3→1), WIN spring bounce, LOSE shake + red flash, PUSH/SURRENDER fade. Staggered for split hands. Payout slides up with delay.
+- **Game Over** — full overlay with backdrop blur, redirects to lobby.
+- **Back to Lobby** — resets both gameStore and uiStore before navigating.
 
 ## Key Engine Functions
 
@@ -146,13 +148,33 @@ Tests pass: `npx vitest run`
 - ~~Player turn breathing glow~~ — Active player's ring pulses with expanding boxShadow + inner radial glow
 - ~~Casino rules text~~ — 3-row tiered text centered on felt showing Blackjack pays, Dealer rules, Insurance
 - ~~Table size~~ — Increased 10% to 990px × 528px
+- ~~Hole card reveal timing~~ — Hand value stays hidden until flip animation completes; hole card stays face-down during dealing
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
 2. **Mobile layout** — Not addressed
 3. **Firestore rules** — Still in test mode (open access)
-4. **Chunk size** — Main bundle ~732KB; could use code splitting
-5. **Table UI polish** — Table proportions and betting area styling still need refinement; action buttons strip position could be tighter aligned with player spots
+4. **Chunk size** — Main bundle ~738KB; could use code splitting
+
+## Polish Todo
+
+**Sound:**
+- Chip click sound, card deal whoosh, dealer bust groan, blackjack chime, ambient casino hum, player turn alert
+
+**Table Atmosphere:**
+- Table lamp/warm glow, dark vignette, dealer shoe visual, discard pile, table limit plaque, felt grain upgrade
+
+**Card Polish:**
+- Custom card back design, face card K/Q/J icons, card edge 3D shadow, burn card on felt
+
+**Betting UX:**
+- Quick bet shortcuts (Min/Half/Max), committed bet chips visible for all, dealer voice line callouts
+
+**Round Flow:**
+- Round intro animation, reshuffle animation, game over dramatic sequence
+
+**Misc:**
+- Room code watermark, player join/leave toasts, emoji reactions, table color themes
 
 ## Firebase Setup
 
