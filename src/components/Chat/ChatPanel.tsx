@@ -94,19 +94,11 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
   }
 
   return createPortal(
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        x: position.x,
-        y: position.y,
-      }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+    <div
       className={`fixed z-[60] bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl ${
         isDragging ? 'cursor-grabbing' : ''
       }`}
-      style={{ width: 340, height: 420 }}
+      style={{ left: position.x, top: position.y, width: 340, height: isOpen ? 420 : 0, overflow: 'hidden' }}
     >
       <AnimatePresence>
         {isOpen ? (
@@ -177,7 +169,7 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </motion.div>,
+    </div>,
     document.body,
   )
 }

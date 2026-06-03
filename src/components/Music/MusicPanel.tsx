@@ -83,13 +83,11 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
   const videoId = (music?.source === 'youtube' && music.url) ? music.url : ''
 
   return createPortal(
-    <motion.div
-      animate={{ x: position.x, y: position.y }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+    <div
       className={`fixed z-[60] bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl ${
         isDragging ? 'cursor-grabbing' : ''
       }`}
-      style={{ width: 340, minHeight: isOpen ? 220 : 0 }}
+      style={{ left: position.x, top: position.y, width: 340, minHeight: isOpen ? 220 : 0, overflow: 'hidden' }}
     >
       <AnimatePresence>
         {isOpen ? (
@@ -193,7 +191,7 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </motion.div>,
+    </div>,
     document.body,
   )
 }
