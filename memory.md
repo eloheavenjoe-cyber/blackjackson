@@ -23,6 +23,9 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - **3 pages:** Lobby (`/`) → Waiting Room → Table (`/table/:roomCode`)
 - **Game state** in single Firestore document `games/{roomCode}`
 - **Bet intents** via subcollection `games/{code}/bets/{playerId}` — only host writes authoritative game doc
+- **Tip intents** via subcollection `games/{code}/tips/{docId}` — same two-phase pattern, host processes with `FieldValue.increment` for concurrency safety
+- **Chat messages** via subcollection `games/{code}/chat/{messageId}` — 4 types: message/tip/emoji/system. Cascade-deleted with game doc.
+- **Music state** via top-level `music` field on GameState — host writes, all clients read via existing `onSnapshot`. Loose drift correction (2s tolerance).
 - **Pending bets** (`pendingBets: Record<string, number>`) synced in game doc — all clients see chips accumulating via `FieldValue.increment`
 - **Room codes** are 6-char alphanumeric (no I/O/0/1)
 - **Auto-advance** via `scheduleNewRound()` (5s timer), called from `writeAndSchedule()` for all write paths
@@ -43,8 +46,19 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 | `src/stores/authStore.ts` | Zustand: auth user + display name |
 | `src/stores/gameStore.ts` | Zustand: game state, roomCode, isHost, reset |
 | `src/stores/uiStore.ts` | Zustand: soundEnabled toggle, volume slider (0-1), currentView (lobby/waiting) |
-| `src/hooks/useGameSync.ts` | Firestore sub + bet intent listener + `finalizeState` + `writeAndSchedule` + timer auto-stand + auto-stand on hit-to-21 + `quickBet` + `scheduleNewRound` |
+| `src/hooks/useGameSync.ts` | Firestore sub + bet intent listener + tip intent listener + `finalizeState` + `writeAndSchedule` + timer auto-stand + auto-stand on hit-to-21 + `quickBet` + `scheduleNewRound` |
 | `src/hooks/useSound.ts` | Web Audio API synthesized sound effects (9 types: deal, chip, win, lose, blackjack, bust, turn, shuffle, tick), master GainNode for volume control |
+| `src/hooks/useDraggable.ts` | Reusable pointer-event drag hook with localStorage persistence + viewport clamping — shared by ChatPanel + MusicPanel |
+| `src/hooks/useChat.ts` | Chat subcollection subscription + sendMessage/sendEmoji/sendTip |
+| `src/hooks/useMusic.ts` | Music sync: YouTube IFrame API + playlist HTML Audio, drift correction, host time-sync every 10s |
+| `src/firebase/chat.ts` | `addChatMessage`, `subscribeToChat` (200-msg limit, ordered by timestamp) |
+| `src/firebase/tips.ts` | `submitTipIntent`, `tipIntentsCollection` |
+| `src/stores/chatStore.ts` | Zustand: messages[], isOpen, lastReadTimestamp, unread state |
+| `src/components/Chat/` | ChatPanel, ChatMessage, EmojiBar, EmojiFloat, ChatToggle |
+| `src/components/Music/` | MusicPanel, MusicControls, YoutubePlayer, PlaylistPicker, MusicToggle |
+| `src/components/Dealer/` | DealerPortrait (persona image + onError fallback) |
+| `src/constants/emojis.ts` | 12 emoji chars for chat emoji bar |
+| `src/constants/music.ts` | 6-track playlist + DEALER_IMAGES mapping |
 | `src/components/Lobby/` | CreateGameForm, JoinGameForm, RulesConfig, WaitingRoom, LobbyPage |
 | `src/components/Table/` | TableFelt, DealerArea, PlayerPosition, CardComponent, CardHand, Chip, ChipStack, ActionButtons, TurnTimer, RoundResult, BettingArea, TablePage, Shoe, DiscardPile, LimitPlaque |
 | `src/components/Shared/` | Button, Modal, PlayerAvatar, VolumeControl |
@@ -97,6 +111,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - `finalizeState(state)` — runs dealer play + settlement if phase is `'dealer'` or `'settlement'`
 - `writeAndSchedule(state)` — writes to Firestore, calls `scheduleNewRound()` if `phase === 'round_end'`
 - Bet intent listener — calls `getGameDoc` for authoritative state (avoids stale store reads)
+- Tip intent listener — validates sender/recipient/chips, uses `FieldValue.increment` for atomic transfer, posts system messages
 - Timer auto-stand — tracks consecutive timeouts, marks inactive after 2
 - Auto-stand on 21 — after hit-to-21, schedules delayed stand (800ms, host-only)
 - `quickBet(target)` — clears pending then uses greedy chip denomination breakdown to reach exact bet amount
@@ -104,18 +119,9 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 ## Test Coverage
 
-57 tests across 9 files in `src/engine/__tests__/` and `src/components/__tests__/`:
-- `types.test.ts` — Type definitions
-- `hand.test.ts` — Hand evaluation (blackjack, soft, hard, bust, multiple aces)
-- `shoe.test.ts` — Shoe creation, draw, reshuffle threshold
-- `game.test.ts` — Game creation, add/remove player, start game, setPlayerBet guards, startNewRound (0-chip, gameOver)
-- `dealing.test.ts` — Initial deal, insurance phase, dealer BJ detection
-- `actions.test.ts` — Stand, split, double (rule enforcement), surrender (guard), insurance actions
-- `dealer.test.ts` — Dealer S17/H17, draw to 17+
-- `settlement.test.ts` — Win, loss, push, blackjack, doubled win, split mixed results, insurance payout
-- `TableFelt.test.ts` — `computePositions` arc geometry: bounds, spread, concave-down curve, monotonic x
+57 tests across 9 files (engine + TableFelt). All pass with `npx vitest run`.
 
-Tests pass: `npx vitest run`
+**Gap:** New chat/music hooks and UI components have no tests. Engine types compile-checked but untested for Firestore integration paths.
 
 ## Fixed Issues Summary
 
@@ -171,9 +177,11 @@ Tests pass: `npx vitest run`
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
-2. **Mobile layout** — Not addressed
-3. **Firestore rules** — Still in test mode (open access)
-4. **Chunk size** — Main bundle ~754KB; could use code splitting
+2. **Mobile layout** — Not addressed; draggable panels may not work on touch
+3. **Firestore rules** — Still in test mode (open access); chat/tips subcollections unprotected
+4. **Chunk size** — Main bundle ~780KB; could use code splitting
+5. **Pixabay playlist URLs** — 6 placeholder URLs in `constants/music.ts` need real working audio file URLs
+6. **No tests for new code** — Chat, music, draggable hook, dealer portrait have zero test coverage
 
 ## Chat, Music & Dealer Features (2026-06-04)
 
