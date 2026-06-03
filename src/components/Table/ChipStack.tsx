@@ -21,25 +21,20 @@ function getChipValues(amount: number): ChipValue[] {
   return result
 }
 
-let idCounter = 0
-function nextId() {
-  return ++idCounter
-}
-
 export function ChipStack({ amount, size = 'sm' }: Props) {
   if (amount <= 0) return null
   const values = getChipValues(amount)
   const chipSize = size === 'sm' ? 'small' : 'table'
-  const maxChips = Math.min(values.length, 5)
-  const height = 28 + (maxChips - 1) * 4
+  const baseDim = size === 'sm' ? 28 : 40
+  const height = baseDim + (values.length - 1) * 4
 
   return (
     <motion.div layout className="relative inline-flex flex-col items-center">
-      <motion.div layout className="relative" style={{ height, width: 30 }}>
+      <motion.div layout className="relative" style={{ height, width: size === 'sm' ? 30 : 42 }}>
         <AnimatePresence>
           {values.map((v, i) => (
             <motion.div
-              key={`${v}-${nextId()}`}
+              key={`${i}-${v}`}
               initial={{ scale: 0, y: -10, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0, y: 8, opacity: 0 }}
