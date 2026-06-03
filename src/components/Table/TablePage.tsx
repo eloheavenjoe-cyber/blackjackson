@@ -14,6 +14,7 @@ import { ActionButtons } from './ActionButtons'
 import { TurnTimer } from './TurnTimer'
 import { Button } from '../Shared/Button'
 import { updateGameDoc } from '../../firebase/games'
+import type { PlayerAction } from '../../engine'
 import { dealInitialHands, allBetsPlaced, needsReshuffle, settleHands, settleInsurance, startNewRound } from '../../engine'
 
 export function TablePage() {
@@ -248,7 +249,7 @@ export function TablePage() {
                   <TurnTimer
                     timeLimit={game.turnTimeLimit}
                     startedAt={game.turnStartedAt}
-                    onTimeout={() => submitAction({ type: 'stand' })}
+                    onTimeout={() => submitAction({ type: 'stand' } as PlayerAction)}
                   />
                 )}
                 <ActionButtons
