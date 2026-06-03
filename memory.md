@@ -52,10 +52,12 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 ## Current UI Layout
 
-- **Half-oval table** — starts at top of screen, `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), felt grain texture (inline SVG pattern), radial highlight
+- **Half-oval table** — starts at top of screen, `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), felt grain texture (inline SVG pattern), radial highlight, `overflow: hidden`
 - **Dealer** — sits on flat top edge of table with dark backdrop, cards overlap, insurance/blackjack pill badges
-- **Players** — positioned on elliptical arc via `computePositions()` (220°–320°, rx/ry), cards on felt with dashed gold betting circles, name + chips below
-- **BettingArea** — below the table in dark floor area, clickable chip tray (6 denominations) + accumulator + Place Bet button
+- **Players** — positioned on elliptical arc via `computePositions()` (160°–20° bottom-half, concave-down), cards on felt with dashed gold betting circles
+- **Player info strip** — below the table (outside `overflow: hidden`), arc-aligned X positions, shows name + chip count + (Away) badge. No PlayerAvatar circles.
+- **Action buttons strip** — below the table (outside `overflow: hidden`), arc-aligned X positions, shows `TurnTimer` + `ActionButtons` for local player's turn only. Never clipped.
+- **BettingArea** — below the table in dark floor area (`pt-12` top padding), clickable chip tray (6 denominations) + accumulator + Place Bet button. Chips auto-consolidate into higher denominations (greedy, with safety guard against value loss).
 - **Chip display** — contained area (`w-48`, min-height 80px), chips in rows of 5, overlap within rows, `+N more` overflow indicator, clickable to remove
 - **Host buttons** — Deal Cards / New Round below the table, centered
 - **RoundResult** — per-hand result overlay (WIN/LOSE/BUST/PUSH/BLACKJACK/SURRENDER) between dealer and table
@@ -92,7 +94,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 ## Test Coverage
 
-51 tests across 8 files in `src/engine/__tests__/`:
+57 tests across 9 files in `src/engine/__tests__/` and `src/components/__tests__/`:
 - `types.test.ts` — Type definitions
 - `hand.test.ts` — Hand evaluation (blackjack, soft, hard, bust, multiple aces)
 - `shoe.test.ts` — Shoe creation, draw, reshuffle threshold
@@ -101,6 +103,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - `actions.test.ts` — Stand, split, double (rule enforcement), surrender (guard), insurance actions
 - `dealer.test.ts` — Dealer S17/H17, draw to 17+
 - `settlement.test.ts` — Win, loss, push, blackjack, doubled win, split mixed results, insurance payout
+- `TableFelt.test.ts` — `computePositions` arc geometry: bounds, spread, concave-down curve, monotonic x
 
 Tests pass: `npx vitest run`
 
@@ -128,13 +131,18 @@ Tests pass: `npx vitest run`
 - Centralized state resolution (`finalizeState` + `writeAndSchedule`)
 - Bet intent listener reads `getGameDoc` to avoid stale store race
 - `scheduleNewRound` uses `gameRef` for fresh state
+- ~~Player arc positioning~~ — Fixed `computePositions` to use bottom-half ellipse (160°–20°, concave-down). Players now render on visible felt along table curve.
+- ~~Player names/chips clipped~~ — Moved outside `TableFelt`'s `overflow: hidden` into arc-aligned info strip below table.
+- ~~Action buttons clipped~~ — Moved outside `TableFelt`'s `overflow: hidden` into arc-aligned strip below table. Always visible.
+- ~~PlayerAvatar circles~~ — Removed from player name display. Only text names now.
+- ~~Chip consolidation~~ — BettingArea auto-consolidates chips into higher denominations (greedy via `breakdownDenoms`), with safety guard against value loss.
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
 2. **Mobile layout** — Not addressed
 3. **Firestore rules** — Still in test mode (open access)
 4. **Chunk size** — Main bundle ~732KB; could use code splitting
-5. **Table UI polish** — Half-oval shape is close but needs refinement (player positions, table proportions, betting area styling)
+5. **Table UI polish** — Table proportions and betting area styling still need refinement; action buttons strip position could be tighter aligned with player spots
 
 ## Firebase Setup
 
