@@ -2,6 +2,7 @@ import {
   doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot,
   collection, addDoc,
   increment,
+  deleteField,
   serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
@@ -63,10 +64,10 @@ export async function submitBetIntent(gameId: string, playerId: string, amount: 
 export async function incrementPendingBet(
   gameId: string,
   playerId: string,
-  delta: number,
+  amount: number,
 ): Promise<void> {
   await updateDoc(gameDoc(gameId), {
-    [`pendingBets.${playerId}`]: increment(delta),
+    [`pendingBets.${playerId}`]: increment(amount),
   } as any)
 }
 
@@ -74,10 +75,7 @@ export async function clearPendingBet(
   gameId: string,
   playerId: string,
 ): Promise<void> {
-  const snap = await getDoc(gameDoc(gameId))
-  if (!snap.exists()) return
-  const data = snap.data()
-  const pendingBets = data.pendingBets || {}
-  delete pendingBets[playerId]
-  await updateDoc(gameDoc(gameId), { pendingBets } as any)
+  await updateDoc(gameDoc(gameId), {
+    [`pendingBets.${playerId}`]: deleteField(),
+  } as any)
 }
