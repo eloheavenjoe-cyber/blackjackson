@@ -178,6 +178,7 @@ export function TablePage() {
                           left: positions[i]?.x ?? 0,
                           top: (positions[i]?.y ?? 0) + 30,
                           transform: 'translate(-50%, -50%)',
+                          zIndex: 5,
                         }}
                       >
                         <ChipStack amount={pending} size="sm" />
