@@ -12,7 +12,9 @@ export const PLAYLIST_TRACKS: PlaylistTrack[] = [
   { title: 'Ambient Casino (Pixabay)', url: 'https://cdn.pixabay.com/audio/2022/08/14/audio_4f6d2e8a0b.mp3' },
 ]
 
-export const DEALER_IMAGES: Record<string, string> = {
+import type { DealerPersona } from '../engine/types'
+
+export const DEALER_IMAGES: Record<DealerPersona, string> = {
   default: '/dealers/default.png',
   lady_gold: '/dealers/lady_gold.png',
   mr_velvet: '/dealers/mr_velvet.png',
