@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'reac
 import { useAuthStore } from './stores/authStore'
 import { LobbyPage } from './components/Lobby/LobbyPage'
 import { TablePage } from './components/Table/TablePage'
+import { VolumeControl } from './components/Shared/VolumeControl'
 
 function AutoJoin() {
   const [params] = useSearchParams()
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route path="/" element={<LobbyPage />} />
         <Route path="/table/:roomCode" element={<TablePage />} />
       </Routes>
+      <VolumeControl />
     </>
   )
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSound } from '../../hooks/useSound'
 
 type Props = {
   timeLimit: number
@@ -9,6 +10,8 @@ type Props = {
 export function TurnTimer({ timeLimit, startedAt, onTimeout }: Props) {
   const [remaining, setRemaining] = useState(timeLimit)
   const firedRef = useRef(false)
+  const lastTickRef = useRef(Math.ceil(timeLimit))
+  const { play } = useSound()
   const pct = (remaining / timeLimit) * 100
 
   useEffect(() => {
@@ -17,6 +20,11 @@ export function TurnTimer({ timeLimit, startedAt, onTimeout }: Props) {
       const elapsed = (Date.now() - startedAt) / 1000
       const left = Math.max(0, timeLimit - elapsed)
       setRemaining(left)
+      const whole = Math.ceil(left)
+      if (whole <= 5 && whole < lastTickRef.current) {
+        lastTickRef.current = whole
+        play('tick')
+      }
       if (left <= 0) {
         clearInterval(interval)
         if (!firedRef.current && onTimeout) {

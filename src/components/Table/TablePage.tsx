@@ -5,6 +5,7 @@ import { useGameSync } from '../../hooks/useGameSync'
 import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useUIStore } from '../../stores/uiStore'
+import { useSound } from '../../hooks/useSound'
 import { TableFelt, computePositions } from './TableFelt'
 import { DealerArea } from './DealerArea'
 import { PlayerPosition } from './PlayerPosition'
@@ -19,7 +20,7 @@ import { LimitPlaque } from './LimitPlaque'
 import { Button } from '../Shared/Button'
 import { updateGameDoc } from '../../firebase/games'
 import type { PlayerAction } from '../../engine'
-import { dealInitialHands, allBetsPlaced, needsReshuffle, settleHands, settleInsurance, startNewRound } from '../../engine'
+import { dealInitialHands, allBetsPlaced, needsReshuffle, settleHands, settleInsurance, startNewRound, evaluateHand } from '../../engine'
 
 export function TablePage() {
   const { roomCode: paramCode } = useParams<{ roomCode: string }>()
@@ -27,12 +28,14 @@ export function TablePage() {
   const { user } = useAuthStore()
   const { setView } = useUIStore()
   const { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip } = useGameSync()
+  const { play } = useSound()
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
   const [showNoMoreBets, setShowNoMoreBets] = useState(false)
   const prevRoundRef = useRef(game?.roundNumber)
   const prevPhaseRef = useRef(game?.phase)
+  const prevTurnRef = useRef(game?.currentTurn)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ width: 800, height: 500 })
 
@@ -56,10 +59,21 @@ export function TablePage() {
   }, [game, paramCode])
 
   useEffect(() => {
-    if (game && prevPhaseRef.current === 'betting' && game.phase === 'dealing') {
-      setShowNoMoreBets(true)
-      const timer = setTimeout(() => setShowNoMoreBets(false), 1000)
-      return () => clearTimeout(timer)
+    if (game && prevPhaseRef.current !== game.phase) {
+      if (prevPhaseRef.current === 'betting' && game.phase === 'dealing') {
+        setShowNoMoreBets(true)
+        const timer = setTimeout(() => setShowNoMoreBets(false), 1000)
+        play('deal')
+        prevPhaseRef.current = game.phase
+        return () => clearTimeout(timer)
+      }
+      if (game.phase === 'round_end' && localPlayer) {
+        for (const hand of localPlayer.hands) {
+          if (hand.result === 'blackjack') play('blackjack')
+          else if (hand.result === 'win') play('win')
+          else if (hand.result === 'lose') play(evaluateHand(hand.cards).isBust ? 'bust' : 'lose')
+        }
+      }
     }
     prevPhaseRef.current = game?.phase
   }, [game?.phase])
@@ -68,6 +82,7 @@ export function TablePage() {
     if (game && prevRoundRef.current !== undefined && game.roundNumber !== prevRoundRef.current) {
       if (needsReshuffle(game.shoe, game.rules.decks)) {
         setShowReshuffle(true)
+        play('shuffle')
         const timer = setTimeout(() => setShowReshuffle(false), 2000)
         return () => clearTimeout(timer)
       }
@@ -81,6 +96,16 @@ export function TablePage() {
       return () => clearTimeout(timer)
     }
   }, [game?.gameOver])
+
+  useEffect(() => {
+    if (game && user && prevTurnRef.current !== game.currentTurn && game.currentTurn >= 0) {
+      const playerAtTurn = game.players[game.currentTurn]
+      if (playerAtTurn?.id === user.uid) {
+        play('turn')
+      }
+    }
+    prevTurnRef.current = game?.currentTurn
+  }, [game?.currentTurn])
 
   useEffect(() => {
     function update() {

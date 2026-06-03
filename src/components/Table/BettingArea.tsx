@@ -1,6 +1,7 @@
 import type { ChipValue } from './Chip'
 import { Chip } from './Chip'
 import { Button } from '../Shared/Button'
+import { useSound } from '../../hooks/useSound'
 
 const allDenoms: ChipValue[] = [10, 25, 50, 100, 250, 500]
 
@@ -21,6 +22,17 @@ export function BettingArea({
   onAddChip, onClear, onPlaceBet,
   alreadyBet, currentBetAmount,
 }: Props) {
+  const { play } = useSound()
+
+  function handleAddChip(value: ChipValue) {
+    play('chip')
+    onAddChip(value)
+  }
+
+  function handlePlaceBet(amount: number) {
+    play('chip')
+    onPlaceBet(amount)
+  }
   if (alreadyBet) {
     return (
       <div className="flex justify-center pt-20 pb-3">
@@ -62,13 +74,13 @@ export function BettingArea({
               key={v}
               value={v}
               size="betting"
-              onClick={canAfford(v) ? () => onAddChip(v) : undefined}
+              onClick={canAfford(v) ? () => handleAddChip(v) : undefined}
               dimmed={!canAfford(v)}
             />
           ))}
         </div>
 
-        <Button onClick={() => onPlaceBet(pendingBet)} disabled={pendingBet < minBet} size="sm">
+        <Button onClick={() => handlePlaceBet(pendingBet)} disabled={pendingBet < minBet} size="sm">
           Place Bet
         </Button>
       </div>
