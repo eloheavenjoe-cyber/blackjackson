@@ -9,6 +9,7 @@ import { DealerArea } from './DealerArea'
 import { PlayerPosition } from './PlayerPosition'
 import { RoundResult } from './RoundResult'
 import { BettingArea } from './BettingArea'
+import { ChipStack } from './ChipStack'
 import { ActionButtons } from './ActionButtons'
 import { TurnTimer } from './TurnTimer'
 import { Button } from '../Shared/Button'
@@ -163,6 +164,26 @@ export function TablePage() {
                     angle={positions[i]?.angle ?? 0}
                   />
                 ))}
+
+                {/* Pending bet chips on felt */}
+                {game.phase === 'betting' &&
+                  game.players.map((player, i) => {
+                    const pending = game.pendingBets?.[player.id] ?? 0
+                    if (pending <= 0) return null
+                    return (
+                      <div
+                        key={`chips-${player.id}`}
+                        className="absolute"
+                        style={{
+                          left: positions[i]?.x ?? 0,
+                          top: (positions[i]?.y ?? 0) + 30,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        <ChipStack amount={pending} size="sm" />
+                      </div>
+                    )
+                  })}
               </div>
             )}
 
