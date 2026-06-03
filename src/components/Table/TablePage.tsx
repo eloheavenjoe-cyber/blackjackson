@@ -13,6 +13,9 @@ import { BettingArea } from './BettingArea'
 import { ChipStack } from './ChipStack'
 import { ActionButtons } from './ActionButtons'
 import { TurnTimer } from './TurnTimer'
+import { DealerShoe, shoeOrigin } from './Shoe'
+import { DiscardPile } from './DiscardPile'
+import { LimitPlaque } from './LimitPlaque'
 import { Button } from '../Shared/Button'
 import { updateGameDoc } from '../../firebase/games'
 import type { PlayerAction } from '../../engine'
@@ -95,8 +98,8 @@ export function TablePage() {
     [game?.players.length, dims]
   )
 
-  const shoeOrigin = useMemo(
-    () => ({ x: dims.width / 2, y: 10 }),
+  const shoeOriginPos = useMemo(
+    () => shoeOrigin(dims.width, dims.height),
     [dims]
   )
 
@@ -160,13 +163,14 @@ export function TablePage() {
           showHoleCard={game.phase === 'dealer' || game.phase === 'settlement' || game.phase === 'round_end'}
           phase={game.phase}
           dealIndex={game.phase === 'dealing' ? game.players.length : null}
-          originX={shoeOrigin.x - dims.width / 2}
-          originY={shoeOrigin.y - 50}
+            originX={shoeOriginPos.x - dims.width / 2}
+            originY={shoeOriginPos.y - 50}
         />
       </div>
 
       {/* Half-oval table */}
       <div className="relative -mt-2">
+        <LimitPlaque minBet={game.rules.minBet} maxBet={game.rules.maxBet} />
         <TableFelt>
           <div ref={containerRef} className="absolute inset-0 flex flex-col">
             {/* Header */}
@@ -175,6 +179,12 @@ export function TablePage() {
               <div className="text-white/40 text-xs font-mono">{game.id}</div>
               <div className="text-white/25 text-xs">{game.players.length} players</div>
             </div>
+
+            {/* Dealer shoe */}
+            <DealerShoe containerWidth={dims.width} containerHeight={dims.height} />
+
+            {/* Discard pile */}
+            <DiscardPile containerWidth={dims.width} containerHeight={dims.height} />
 
             {/* Casino rules text */}
             <div className="absolute left-0 right-0 flex justify-center pointer-events-none z-[1]" style={{ top: '8%' }}>
@@ -234,8 +244,8 @@ export function TablePage() {
                     angle={positions[i]?.angle ?? 0}
                     betAmount={game.phase === 'betting' ? (game.pendingBets?.[player.id] ?? player.hands[0]?.bet ?? 0) : (player.hands[0]?.bet ?? 0)}
                     dealIndex={game.phase === 'dealing' ? (dealIndices.get(player.id) ?? null) : null}
-                    originX={shoeOrigin.x - (positions[i]?.x ?? 0)}
-                    originY={shoeOrigin.y - (positions[i]?.y ?? 0)}
+                    originX={shoeOriginPos.x - (positions[i]?.x ?? 0)}
+                    originY={shoeOriginPos.y - (positions[i]?.y ?? 0)}
                   />
                 ))}
 
