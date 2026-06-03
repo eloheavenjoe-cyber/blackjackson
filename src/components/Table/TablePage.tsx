@@ -238,7 +238,7 @@ export function TablePage() {
             style={{ width: dims.width }}
           >
             <div
-              className="flex justify-center"
+              className="flex"
               style={{
                 paddingLeft: positions[lpIdx]?.x ?? '50%',
               }}
