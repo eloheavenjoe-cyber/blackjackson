@@ -17,6 +17,7 @@ type Props = {
 
 export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSendTip }: Props) {
   const { messages, isOpen, setIsOpen, setLastReadTimestamp } = useChatStore()
+  console.log('[ChatPanel] render, isOpen:', isOpen, 'roomCode:', roomCode)
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const feedRef = useRef<HTMLDivElement>(null)

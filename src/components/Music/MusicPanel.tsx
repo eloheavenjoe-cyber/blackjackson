@@ -20,6 +20,7 @@ type Props = {
 }
 
 export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, onCommand, onVolumeChange, onTimeUpdate }: Props) {
+  console.log('[MusicPanel] render, isOpen:', isOpen, 'roomCode:', roomCode)
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [activeTab, setActiveTab] = useState<'youtube' | 'playlist'>('youtube')
   const [duration, setDuration] = useState(0)
