@@ -26,6 +26,7 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
     `chatPanelPos_${roomCode}`,
     { x: window.innerWidth - 360, y: 120 },
   )
+  console.log('[ChatPanel] position:', position.x, position.y, 'window:', window.innerWidth, window.innerHeight)
 
   useEffect(() => {
     if (feedRef.current) {

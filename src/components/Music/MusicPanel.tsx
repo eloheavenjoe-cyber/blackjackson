@@ -29,6 +29,7 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
     `musicPanelPos_${roomCode}`,
     { x: window.innerWidth - 360, y: 560 },
   )
+  console.log('[MusicPanel] position:', position.x, position.y, 'window:', window.innerWidth, window.innerHeight)
 
   function handlePlayPause() {
     if (!music) return
