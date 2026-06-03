@@ -129,6 +129,20 @@ export function useGameSync() {
     await clearPendingBet(game.id, user.uid)
   }
 
+  async function quickBet(target: number) {
+    if (!game || !user || target <= 0) return
+    await clearPendingBet(game.id, user.uid)
+    const denoms = [500, 250, 100, 50, 25, 10]
+    let remaining = target
+    for (const d of denoms) {
+      const count = Math.floor(remaining / d)
+      for (let i = 0; i < count; i++) {
+        await incrementPendingBet(game.id, user.uid, d)
+      }
+      remaining -= count * d
+    }
+  }
+
   async function submitAction(action: PlayerAction) {
     if (!game || !user) return
     const updated = processAction(game, { ...action, playerId: user.uid })
@@ -185,5 +199,5 @@ export function useGameSync() {
     }, 5000)
   }
 
-  return { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip }
+  return { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip, quickBet }
 }

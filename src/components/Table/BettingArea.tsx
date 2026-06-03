@@ -13,13 +13,14 @@ type Props = {
   onAddChip: (value: ChipValue) => void
   onClear: () => void
   onPlaceBet: (amount: number) => void
+  onQuickBet: (amount: number) => void
   alreadyBet: boolean
   currentBetAmount?: number
 }
 
 export function BettingArea({
   chips, minBet, maxBet, pendingBet,
-  onAddChip, onClear, onPlaceBet,
+  onAddChip, onClear, onPlaceBet, onQuickBet,
   alreadyBet, currentBetAmount,
 }: Props) {
   const { play } = useSound()
@@ -54,6 +55,10 @@ export function BettingArea({
 
   const canAfford = (v: number) => v <= chips && v + pendingBet <= maxBet && v + pendingBet <= chips
 
+  const halfBet = Math.floor(chips / 2)
+  const clampedHalf = Math.min(halfBet, maxBet)
+  const clampedMax = Math.min(chips, maxBet)
+
   return (
     <div className="pt-20 pb-3">
       <div className="flex items-center justify-center gap-6">
@@ -83,6 +88,31 @@ export function BettingArea({
         <Button onClick={() => handlePlaceBet(pendingBet)} disabled={pendingBet < minBet} size="sm">
           Place Bet
         </Button>
+      </div>
+
+      {/* Quick bet shortcuts */}
+      <div className="flex items-center justify-center gap-2 mt-3">
+        <button
+          onClick={() => onQuickBet(minBet)}
+          disabled={chips < minBet}
+          className="text-xs text-gold/50 hover:text-gold border border-gold/15 hover:border-gold/30 rounded-full px-3 py-1 cursor-pointer disabled:opacity-30 disabled:cursor-default transition-colors"
+        >
+          Min
+        </button>
+        <button
+          onClick={() => onQuickBet(clampedHalf)}
+          disabled={clampedHalf < minBet}
+          className="text-xs text-gold/50 hover:text-gold border border-gold/15 hover:border-gold/30 rounded-full px-3 py-1 cursor-pointer disabled:opacity-30 disabled:cursor-default transition-colors"
+        >
+          1/2
+        </button>
+        <button
+          onClick={() => onQuickBet(clampedMax)}
+          disabled={clampedMax < minBet}
+          className="text-xs text-gold/50 hover:text-gold border border-gold/15 hover:border-gold/30 rounded-full px-3 py-1 cursor-pointer disabled:opacity-30 disabled:cursor-default transition-colors"
+        >
+          Max
+        </button>
       </div>
     </div>
   )

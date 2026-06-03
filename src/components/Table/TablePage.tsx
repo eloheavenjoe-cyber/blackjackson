@@ -27,12 +27,13 @@ export function TablePage() {
   const { game, isHost, setRoomCode, reset: resetGame } = useGameStore()
   const { user } = useAuthStore()
   const { setView } = useUIStore()
-  const { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip } = useGameSync()
+  const { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip, quickBet } = useGameSync()
   const { play } = useSound()
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
   const [showNoMoreBets, setShowNoMoreBets] = useState(false)
+  const [showRoundIntro, setShowRoundIntro] = useState(false)
   const prevRoundRef = useRef(game?.roundNumber)
   const prevPhaseRef = useRef(game?.phase)
   const prevTurnRef = useRef(game?.currentTurn)
@@ -80,12 +81,15 @@ export function TablePage() {
 
   useEffect(() => {
     if (game && prevRoundRef.current !== undefined && game.roundNumber !== prevRoundRef.current) {
+      setShowRoundIntro(true)
+      const introTimer = setTimeout(() => setShowRoundIntro(false), 1800)
       if (needsReshuffle(game.shoe, game.rules.decks)) {
         setShowReshuffle(true)
         play('shuffle')
-        const timer = setTimeout(() => setShowReshuffle(false), 2000)
-        return () => clearTimeout(timer)
+        const shuffleTimer = setTimeout(() => setShowReshuffle(false), 2000)
+        return () => { clearTimeout(introTimer); clearTimeout(shuffleTimer) }
       }
+      return () => clearTimeout(introTimer)
     }
     prevRoundRef.current = game?.roundNumber
   }, [game])
@@ -176,8 +180,30 @@ export function TablePage() {
   return (
     <div className="min-h-screen flex flex-col items-center relative" style={{ background: 'radial-gradient(ellipse at 50% 30%, #3b2210 0%, #1a0a00 60%, #0a0400 100%)' }}>
       {showReshuffle && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-gold/90 text-gray-900 font-bold px-6 py-2 rounded-lg z-50 animate-pulse">
-          Reshuffling...
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+            className="flex items-center gap-3 bg-gold/95 text-gray-900 font-bold px-6 py-2 rounded-lg shadow-2xl"
+          >
+            <motion.span
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 0.3 }}
+              className="text-lg"
+            >
+              {'\u{1F0A0}'}
+            </motion.span>
+            <span>Reshuffling</span>
+            <motion.span
+              animate={{ rotate: [0, -15, 15, 0] }}
+              transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 0.3, delay: 0.15 }}
+              className="text-lg"
+            >
+              {'\u{1F0A0}'}
+            </motion.span>
+          </motion.div>
         </div>
       )}
 
@@ -204,6 +230,38 @@ export function TablePage() {
               <div className="text-white/40 text-xs font-mono">{game.id}</div>
               <div className="text-white/25 text-xs">{game.players.length} players</div>
             </div>
+
+            {/* Round intro */}
+            <AnimatePresence>
+              {showRoundIntro && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 1.1, y: -10 }}
+                  transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+                  className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                >
+                  <div className="text-center">
+                    <motion.span
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.4 }}
+                      className="block text-gold/40 text-xs font-serif tracking-[0.3em] uppercase mb-1"
+                    >
+                      Round
+                    </motion.span>
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0, rotate: -5 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.3, type: 'spring', stiffness: 150, damping: 12 }}
+                      className="block text-6xl font-black text-gold/30"
+                    >
+                      {game.roundNumber}
+                    </motion.span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Dealer shoe */}
             <DealerShoe containerWidth={dims.width} containerHeight={dims.height} />
@@ -283,11 +341,13 @@ export function TablePage() {
                   />
                 ))}
 
-                {/* Pending bet chips on felt */}
+                {/* Pending + committed bet chips on felt */}
                 {game.phase === 'betting' &&
                   game.players.map((player, i) => {
+                    const committed = player.hands[0]?.bet ?? 0
                     const pending = game.pendingBets?.[player.id] ?? 0
-                    if (pending <= 0) return null
+                    const amount = pending > 0 ? pending : committed
+                    if (amount <= 0) return null
                     return (
                       <div
                         key={`chips-${player.id}`}
@@ -299,7 +359,7 @@ export function TablePage() {
                           zIndex: 5,
                         }}
                       >
-                        <ChipStack amount={pending} size="sm" />
+                        <ChipStack amount={amount} size="sm" />
                       </div>
                     )
                   })}
@@ -408,6 +468,7 @@ export function TablePage() {
           onAddChip={addBetChip}
           onClear={clearBetChip}
           onPlaceBet={(amount) => submitBet(user.uid, amount)}
+          onQuickBet={quickBet}
           alreadyBet={false}
         />
       )}
@@ -421,6 +482,7 @@ export function TablePage() {
           onAddChip={() => {}}
           onClear={() => {}}
           onPlaceBet={() => {}}
+          onQuickBet={() => {}}
           alreadyBet={true}
           currentBetAmount={localPlayer.hands[0].bet}
         />
