@@ -245,6 +245,7 @@ export function TablePage() {
           dealIndex={game.phase === 'dealing' ? game.players.length : null}
             originX={shoeOriginPos.x - dims.width / 2}
             originY={shoeOriginPos.y - 50}
+          persona={game.dealerPersona}
         />
       </div>
 

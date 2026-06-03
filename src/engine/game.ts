@@ -1,12 +1,13 @@
-import type { GameState, GameRules, PlayerState } from './types'
+import type { GameState, GameRules, PlayerState, DealerPersona } from './types'
 import { createShoe, needsReshuffle, reshuffleDiscard } from './shoe'
 
-export function createGame(id: string, hostId: string, rules: GameRules): GameState {
+export function createGame(id: string, hostId: string, rules: GameRules, dealerPersona?: DealerPersona): GameState {
   return {
     id,
     phase: 'waiting',
     hostId,
     rules,
+    dealerPersona: dealerPersona ?? 'default',
     shoe: createShoe(rules.decks),
     discard: [],
     dealerHand: [],

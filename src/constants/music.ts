@@ -15,8 +15,8 @@ export const PLAYLIST_TRACKS: PlaylistTrack[] = [
 import type { DealerPersona } from '../engine/types'
 
 export const DEALER_IMAGES: Record<DealerPersona, string> = {
-  default: '/dealers/default.png',
-  lady_gold: '/dealers/lady_gold.png',
-  mr_velvet: '/dealers/mr_velvet.png',
-  the_house: '/dealers/the_house.png',
+  default: '/dealers/default.svg',
+  lady_gold: '/dealers/lady_gold.svg',
+  mr_velvet: '/dealers/mr_velvet.svg',
+  the_house: '/dealers/the_house.svg',
 }

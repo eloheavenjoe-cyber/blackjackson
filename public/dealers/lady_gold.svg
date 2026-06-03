@@ -1,0 +1,6 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='200' height='240' viewBox='0 0 200 240'>
+  <rect width='200' height='240' fill='#3a1a2a' rx='12'/>
+  <circle cx='100' cy='100' r='60' fill='#603040'/>
+  <text x='100' y='195' text-anchor='middle' fill='#d4a843' font-size='16' font-family='serif'>Lady Gold</text>
+  <text x='100' y='215' text-anchor='middle' fill='#d4a843' font-size='12' font-family='serif'>Dealer</text>
+</svg>

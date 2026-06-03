@@ -26,6 +26,7 @@ const defaultRules: GameRules = {
 
 export function CreateGameForm() {
   const [rules, setRules] = useState<GameRules>(defaultRules)
+  const [dealerPersona, setDealerPersona] = useState<string>('default')
   const [creating, setCreating] = useState(false)
   const { user, displayName, setDisplayName } = useAuthStore()
   const { setGame, setRoomCode, setIsHost } = useGameStore()
@@ -49,7 +50,7 @@ export function CreateGameForm() {
       return
     }
 
-    let game = createGame(code, user.uid, rules)
+    let game = createGame(code, user.uid, rules, dealerPersona as any)
     game = addPlayer(game, {
       id: user.uid,
       name: displayName,
@@ -81,6 +82,19 @@ export function CreateGameForm() {
           maxLength={20}
           className="w-full rounded-lg bg-gray-800 border border-white/10 px-3 py-2 text-white focus:border-gold focus:outline-none"
         />
+      </div>
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">Dealer Persona</label>
+        <select
+          value={dealerPersona}
+          onChange={(e) => setDealerPersona(e.target.value)}
+          className="block w-full rounded-lg bg-gray-800 border border-white/10 px-3 py-2 text-white text-sm focus:border-gold focus:outline-none"
+        >
+          <option value="default">Default</option>
+          <option value="lady_gold">Lady Gold</option>
+          <option value="mr_velvet">Mr Velvet</option>
+          <option value="the_house">The House</option>
+        </select>
       </div>
       <RulesConfig rules={rules} onChange={setRules} />
       <Button onClick={handleCreate} disabled={creating || !displayName.trim()} size="lg" className="w-full">

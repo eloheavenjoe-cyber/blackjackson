@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import type { Card } from '../../engine/types'
 import { evaluateHand } from '../../engine'
 import { CardComponent, CardBack } from './CardComponent'
-import { PlayerAvatar } from '../Shared/PlayerAvatar'
+import { DealerPortrait } from '../Dealer/DealerPortrait'
+import type { DealerPersona } from '../../engine/types'
 
 type Props = {
   dealerHand: Card[]
@@ -12,9 +13,10 @@ type Props = {
   dealIndex?: number | null
   originX?: number
   originY?: number
+  persona?: DealerPersona
 }
 
-export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX, originY }: Props) {
+export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX, originY, persona }: Props) {
   const [flipping, setFlipping] = useState(false)
   const [flipComplete, setFlipComplete] = useState(false)
   const showFull = showHoleCard && flipComplete
@@ -50,9 +52,8 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
         marginBottom: -10,
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <PlayerAvatar name="Dealer" seat={6} size="sm" />
-        <span className="text-gold/70 text-xs font-semibold uppercase tracking-widest">Dealer</span>
+      <div className="flex flex-col items-center gap-1 mb-1">
+        <DealerPortrait persona={persona} />
       </div>
 
       {phase === 'insurance' && (
@@ -67,7 +68,7 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
       )}
 
       <div
-        className="flex -space-x-4"
+        className="flex -space-x-4 mt-1"
         style={{ perspective: 600 }}
       >
         {dealerHand.map((card, i) => {
