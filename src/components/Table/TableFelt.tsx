@@ -8,14 +8,14 @@ type SeatPosition = {
 
 export function computePositions(count: number, width: number, height: number): SeatPosition[] {
   if (count === 0) return []
-  if (count === 1) return [{ x: width / 2, y: height * 0.58, angle: 0 }]
+  if (count === 1) return [{ x: width / 2, y: height * 0.72, angle: 0 }]
 
   const cx = width / 2
-  const cy = height * 0.25
+  const cy = height * 0.60
   const rx = width * 0.36
-  const ry = height * 0.40
-  const startAngle = 225 * (Math.PI / 180)
-  const endAngle = 315 * (Math.PI / 180)
+  const ry = height * 0.18
+  const startAngle = 160 * (Math.PI / 180)
+  const endAngle = 20 * (Math.PI / 180)
   const arcSpan = endAngle - startAngle
 
   return Array.from({ length: count }, (_, i) => {
