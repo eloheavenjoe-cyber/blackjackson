@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { Card } from '../../engine/types'
 import { evaluateHand } from '../../engine'
-import { CardComponent } from './CardComponent'
+import { CardComponent, CardBack } from './CardComponent'
 import { PlayerAvatar } from '../Shared/PlayerAvatar'
 
 type Props = {
@@ -42,7 +42,7 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
 
   return (
     <div
-      className="flex flex-col items-center"
+      className="flex flex-col items-center relative"
       style={{
         background: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
         padding: '10px 40px 20px',
@@ -91,6 +91,22 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
             <span className="text-white/15 text-xl">?</span>
           </div>
         )}
+      </div>
+
+      {/* Burn card — face-down card near shoe position */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          right: '8%',
+          top: '35%',
+          transform: 'rotate(15deg)',
+          width: 40,
+          height: 56,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+          zIndex: 1,
+        }}
+      >
+        <CardBack />
       </div>
 
       {ev && phase !== 'waiting' && phase !== 'betting' && phase !== 'dealing' && (
