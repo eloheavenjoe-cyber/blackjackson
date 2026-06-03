@@ -83,6 +83,28 @@ export function TablePage() {
     [game?.players.length, dims]
   )
 
+  const shoeOrigin = useMemo(
+    () => ({ x: dims.width / 2, y: 10 }),
+    [dims]
+  )
+
+  const dealIndices = useMemo(() => {
+    const playerCount = game?.players.length ?? 0
+    if (playerCount === 0 || game?.phase !== 'dealing') return new Map<string, { first: number; second: number }>()
+    const map = new Map<string, { first: number; second: number }>()
+    let idx = 0
+    game!.players.forEach((p) => {
+      map.set(p.id, { first: idx++, second: 0 })
+    })
+    const dealerFirst = idx++
+    game!.players.forEach((p) => {
+      const entry = map.get(p.id)!
+      entry.second = idx++
+    })
+    const dealerSecond = idx++
+    return map
+  }, [game?.players, game?.phase])
+
   if (notFound) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a0a00' }}>
@@ -127,6 +149,9 @@ export function TablePage() {
           dealerHand={game.dealerHand}
           showHoleCard={game.phase === 'dealer' || game.phase === 'settlement' || game.phase === 'round_end'}
           phase={game.phase}
+          dealIndex={game.phase === 'dealing' ? game.players.length : null}
+          originX={shoeOrigin.x - dims.width / 2}
+          originY={shoeOrigin.y - 50}
         />
       </div>
 
@@ -163,6 +188,9 @@ export function TablePage() {
                     x={positions[i]?.x ?? 0}
                     y={positions[i]?.y ?? 0}
                     angle={positions[i]?.angle ?? 0}
+                    dealIndex={game.phase === 'dealing' ? (dealIndices.get(player.id) ?? null) : null}
+                    originX={shoeOrigin.x - (positions[i]?.x ?? 0)}
+                    originY={shoeOrigin.y - (positions[i]?.y ?? 0)}
                   />
                 ))}
 
