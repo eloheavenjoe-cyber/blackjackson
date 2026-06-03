@@ -198,46 +198,6 @@ export function TablePage() {
         </TableFelt>
       </div>
 
-      {/* Action buttons strip */}
-      {!game.gameOver && (() => {
-        const lp = localPlayer
-        if (!lp) return null
-        const lpIdx = game.players.findIndex(p => p.id === lp.id)
-        const canAct = game.currentTurn === lp.seat && (game.phase === 'playing' || game.phase === 'insurance')
-        if (!canAct) return null
-        return (
-          <div className="relative mx-auto z-20" style={{ width: dims.width }}>
-            <div
-              className="absolute flex justify-center"
-              style={{
-                left: positions[lpIdx]?.x ?? '50%',
-                transform: 'translateX(-50%)',
-              }}
-            >
-              <div className="space-y-1.5">
-                {game.turnTimeLimit > 0 && game.turnStartedAt && game.phase === 'playing' && (
-                  <TurnTimer
-                    timeLimit={game.turnTimeLimit}
-                    startedAt={game.turnStartedAt}
-                    onTimeout={() => submitAction({ type: 'stand' })}
-                  />
-                )}
-                <ActionButtons
-                  hand={lp.hands[lp.activeHandIndex]}
-                  chips={lp.chips}
-                  onAction={submitAction}
-                  rules={game.rules}
-                  handIndex={lp.activeHandIndex}
-                  playerHands={lp.hands}
-                  phase={game.phase}
-                  dealerUpcard={game.dealerHand.length > 0 ? game.dealerHand[0].rank : null}
-                />
-              </div>
-            </div>
-          </div>
-        )
-      })()}
-
       {/* Player info strip */}
       {!game.gameOver && (
         <div
@@ -264,6 +224,48 @@ export function TablePage() {
           ))}
         </div>
       )}
+
+      {/* Action buttons strip */}
+      {!game.gameOver && (() => {
+        const lp = localPlayer
+        if (!lp) return null
+        const lpIdx = game.players.findIndex(p => p.id === lp.id)
+        const canAct = game.currentTurn === lp.seat && (game.phase === 'playing' || game.phase === 'insurance')
+        if (!canAct) return null
+        return (
+          <div
+            className="relative mx-auto mt-2"
+            style={{ width: dims.width }}
+          >
+            <div
+              className="flex justify-center"
+              style={{
+                paddingLeft: positions[lpIdx]?.x ?? '50%',
+              }}
+            >
+              <div className="space-y-1.5 -translate-x-1/2">
+                {game.turnTimeLimit > 0 && game.turnStartedAt && game.phase === 'playing' && (
+                  <TurnTimer
+                    timeLimit={game.turnTimeLimit}
+                    startedAt={game.turnStartedAt}
+                    onTimeout={() => submitAction({ type: 'stand' })}
+                  />
+                )}
+                <ActionButtons
+                  hand={lp.hands[lp.activeHandIndex]}
+                  chips={lp.chips}
+                  onAction={submitAction}
+                  rules={game.rules}
+                  handIndex={lp.activeHandIndex}
+                  playerHands={lp.hands}
+                  phase={game.phase}
+                  dealerUpcard={game.dealerHand.length > 0 ? game.dealerHand[0].rank : null}
+                />
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Round result */}
       <div className="relative z-10 -mt-4">
