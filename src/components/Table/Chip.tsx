@@ -1,5 +1,7 @@
+export type ChipValue = 10 | 25 | 50 | 100 | 250 | 500
+
 type ChipProps = {
-  value: 10 | 25 | 50 | 100 | 250 | 500
+  value: ChipValue
   size?: 'betting' | 'table' | 'small'
   onClick?: () => void
   dimmed?: boolean
