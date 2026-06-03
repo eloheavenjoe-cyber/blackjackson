@@ -22,6 +22,7 @@ type Props = {
 export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, onCommand, onVolumeChange, onTimeUpdate }: Props) {
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [activeTab, setActiveTab] = useState<'youtube' | 'playlist'>('youtube')
+  const [duration, setDuration] = useState(0)
 
   const { position, isDragging, dragHandlers } = useDraggable(
     `musicPanelPos_${roomCode}`,
@@ -141,9 +142,10 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
               <MusicControls
                 playing={music?.playing ?? false}
                 currentTime={music?.currentTime ?? 0}
-                duration={0}
+                duration={duration}
                 source={music?.source ?? 'youtube'}
                 volume={volume}
+                isHost={isHost}
                 onPlayPause={handlePlayPause}
                 onSeek={handleSeek}
                 onVolumeChange={onVolumeChange}
@@ -183,7 +185,7 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
                 playing={music?.playing ?? false}
                 currentTime={music?.currentTime ?? 0}
                 volume={volume}
-                onReady={() => {}}
+                onReady={(d) => setDuration(d)}
                 onTimeUpdate={onTimeUpdate}
                 onEnded={() => {}}
               />

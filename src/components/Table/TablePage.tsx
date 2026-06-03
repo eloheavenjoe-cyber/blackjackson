@@ -161,7 +161,10 @@ export function TablePage() {
         if (playerIdx === -1) continue
         const pos = positions[playerIdx]
         if (!pos) continue
-        setEmojiFloats((prev) => [...prev, { id, emoji: msg.text, x: pos.x, y: pos.y }])
+        const rect = containerRef.current?.getBoundingClientRect()
+        const offsetX = rect?.left ?? 0
+        const offsetY = rect?.top ?? 0
+        setEmojiFloats((prev) => [...prev, { id, emoji: msg.text, x: pos.x + offsetX, y: pos.y + offsetY }])
       }
     })
     return () => unsub()
@@ -551,7 +554,7 @@ export function TablePage() {
         />
       )}
 
-      <ChatToggle onClick={() => useChatStore.getState().setIsOpen(true)} />
+      {!game.gameOver && <ChatToggle onClick={() => useChatStore.getState().setIsOpen(true)} />}
 
       <MusicToggle
         isPlaying={!!(game?.music?.playing)}

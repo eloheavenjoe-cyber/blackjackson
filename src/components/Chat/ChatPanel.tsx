@@ -142,8 +142,8 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
                   No messages yet
                 </div>
               )}
-              {visibleMessages.map((msg, i) => (
-                <ChatMessage key={i} message={msg} />
+              {visibleMessages.map((msg) => (
+                <ChatMessage key={`${msg.playerId}-${msg.timestamp}`} message={msg} />
               ))}
             </div>
 

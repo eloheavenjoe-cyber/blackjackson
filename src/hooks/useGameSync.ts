@@ -3,7 +3,7 @@ import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
 import { subscribeToGame, updateGameDoc, submitBetIntent, getGameDoc, incrementPendingBet, clearPendingBet } from '../firebase/games'
 import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound, evaluateHand } from '../engine'
-import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
+import { collection, onSnapshot as fsOnSnapshot, deleteDoc, increment } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { addChatMessage } from '../firebase/chat'
 import type { PlayerAction, GameState } from '../engine/types'
@@ -62,13 +62,13 @@ export function useGameSync() {
         if (change.type === 'added') {
           const data = change.doc.data()
           const { fromId, toPlayerId, amount } = data
-          const sender = current.players.find((p: any) => p.id === fromId)
-          const recipient = current.players.find((p: any) => p.id === toPlayerId)
-          if (!sender || !recipient) {
+          const senderIdx = current.players.findIndex((p: any) => p.id === fromId)
+          const recipientIdx = current.players.findIndex((p: any) => p.id === toPlayerId)
+          if (senderIdx === -1 || recipientIdx === -1) {
             deleteDoc(change.doc.ref).catch(() => {})
             continue
           }
-          if (sender.chips < amount) {
+          if (current.players[senderIdx].chips < amount) {
             addChatMessage(roomCode, {
               playerId: 'SYSTEM',
               playerName: 'SYSTEM',
@@ -78,16 +78,14 @@ export function useGameSync() {
             deleteDoc(change.doc.ref).catch(() => {})
             continue
           }
-          const updatedPlayers = current.players.map((p: any) => {
-            if (p.id === fromId) return { ...p, chips: p.chips - amount }
-            if (p.id === toPlayerId) return { ...p, chips: p.chips + amount }
-            return p
-          })
-          await updateGameDoc(roomCode, { players: updatedPlayers })
+          await updateGameDoc(roomCode, {
+            [`players.${senderIdx}.chips`]: increment(-amount),
+            [`players.${recipientIdx}.chips`]: increment(amount),
+          } as any)
           addChatMessage(roomCode, {
             playerId: 'SYSTEM',
             playerName: 'SYSTEM',
-            text: `SYSTEM: ${sender.name} tipped ${amount} chips to ${recipient.name}`,
+            text: `SYSTEM: ${current.players[senderIdx].name} tipped ${amount} chips to ${current.players[recipientIdx].name}`,
             type: 'system',
           })
           deleteDoc(change.doc.ref).catch(() => {})

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DEALER_IMAGES } from '../../constants/music'
 import type { DealerPersona } from '../../engine/types'
 
@@ -9,6 +9,8 @@ type Props = {
 export function DealerPortrait({ persona = 'default' }: Props) {
   const [error, setError] = useState(false)
   const src = DEALER_IMAGES[persona] ?? DEALER_IMAGES.default
+
+  useEffect(() => { setError(false) }, [persona])
 
   if (error) {
     return (

@@ -4,12 +4,13 @@ type Props = {
   duration: number
   source: 'youtube' | 'playlist'
   volume: number
+  isHost?: boolean
   onPlayPause: () => void
   onSeek: (time: number) => void
   onVolumeChange: (vol: number) => void
 }
 
-export function MusicControls({ playing, currentTime, duration, source, volume, onPlayPause, onSeek, onVolumeChange }: Props) {
+export function MusicControls({ playing, currentTime, duration, source, volume, isHost = true, onPlayPause, onSeek, onVolumeChange }: Props) {
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60)
     const sec = Math.floor(s % 60)
@@ -18,15 +19,21 @@ export function MusicControls({ playing, currentTime, duration, source, volume, 
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-center gap-3">
-        <button
-          onClick={onPlayPause}
-          className="text-gold hover:text-gold/80 text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors"
-        >
-          {playing ? '\u23F8' : '\u25B6'}
-        </button>
-      </div>
-      {source === 'youtube' && duration > 0 && (
+      {isHost ? (
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={onPlayPause}
+            className="text-gold hover:text-gold/80 text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors"
+          >
+            {playing ? '\u23F8' : '\u25B6'}
+          </button>
+        </div>
+      ) : (
+        <div className="text-center">
+          <span className="text-[10px] text-white/20">Now Playing</span>
+        </div>
+      )}
+      {isHost && source === 'youtube' && duration > 0 && (
         <div className="space-y-1">
           <input
             type="range"
