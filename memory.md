@@ -46,15 +46,17 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 | `src/hooks/useGameSync.ts` | Firestore sub + bet intent listener + `finalizeState` + `writeAndSchedule` + timer auto-stand + `scheduleNewRound` |
 | `src/hooks/useSound.ts` | Web Audio API sound effects (6 types, gated by soundEnabled) |
 | `src/components/Lobby/` | CreateGameForm, JoinGameForm, RulesConfig, WaitingRoom, LobbyPage |
-| `src/components/Table/` | TableFelt, DealerArea, PlayerPosition, CardComponent, CardHand, Chip, ChipStack, ActionButtons, TurnTimer, RoundResult, BettingArea, TablePage |
+| `src/components/Table/` | TableFelt, DealerArea, PlayerPosition, CardComponent, CardHand, Chip, ChipStack, ActionButtons, TurnTimer, RoundResult, BettingArea, TablePage, Shoe, DiscardPile, LimitPlaque |
 | `src/components/Shared/` | Button, Modal, PlayerAvatar |
 | `docs/superpowers/specs/` | Design specs |
 | `docs/superpowers/plans/` | Implementation plans |
 
 ## Current UI Layout
 
-- **Table size** — `min(92vw, 990px)` × `min(55vh, 528px)`, half-oval with `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), felt grain texture, radial highlight, `overflow: hidden`
-- **Dealer** — sits on flat top edge of table with dark backdrop. Cards fly in from shoe position. Hole card uses 3D flip (rotateY + backface-visibility) synced to hand value reveal via `flipping`/`flipComplete` states.
+- **Table size** — `min(92vw, 990px)` × `min(55vh, 528px)`, half-oval with `border-radius: 0 0 48% 48%`, wood rim (#5c3a1e), fabric grain via SVG feTurbulence filter, two-layer warm lamp glow with subtle flicker animation, two-layer dark vignette, `overflow: hidden`
+- **Table objects** — Dealer shoe (inline SVG wedge at top-right), discard pile (4 staggered face-down cards at top-left), burn card (rotated CardBack near dealer area), brass limit plaque (min/max bet at top-center edge)
+- **Dealer** — sits on flat top edge of table with dark backdrop. Cards fly in from shoe origin (82% x, 8% y). Hole card uses 3D flip (rotateY + backface-visibility) synced to hand value reveal via `flipping`/`flipComplete` states.
+- **Cards** — CSS/HTML with 3D transform. Face cards (K/Q/J) have inline SVG figure icons on md/lg sizes. Card back is navy/gold/burgundy casino SVG pattern. 3D edge shadow (tight bottom + ambient + inset rim light).
 - **Players** — positioned on elliptical arc via `computePositions()` (160°–20° concave-down). Cards deal sequentially from shoe origin. Betting circles have dashed gold borders with breathing glow on active turn; ring glow intensity scales with bet amount.
 - **Player info strip** — below table, `minHeight: 32` to reserve space, arc-aligned X positions, shows name + animated chip count + (Away) badge.
 - **Action buttons strip** — in document flow below info strip (`mt-2`), arc-aligned via `paddingLeft` + `-translate-x-1/2`. Never clipped.
@@ -149,6 +151,8 @@ Tests pass: `npx vitest run`
 - ~~Casino rules text~~ — 3-row tiered text centered on felt showing Blackjack pays, Dealer rules, Insurance
 - ~~Table size~~ — Increased 10% to 990px × 528px
 - ~~Hole card reveal timing~~ — Hand value stays hidden until flip animation completes; hole card stays face-down during dealing
+- ~~Table atmosphere~~ — Warm two-layer lamp glow with flicker, two-layer dark vignette, fabric noise felt grain, dealer shoe, discard pile, burn card, brass limit plaque
+- ~~Card polish~~ — Casino SVG card back (navy/gold/burgundy with filigree), K/Q/J face card figure icons, 3D edge shadow
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
@@ -160,12 +164,6 @@ Tests pass: `npx vitest run`
 
 **Sound:**
 - Chip click sound, card deal whoosh, dealer bust groan, blackjack chime, ambient casino hum, player turn alert
-
-**Table Atmosphere:**
-- Table lamp/warm glow, dark vignette, dealer shoe visual, discard pile, table limit plaque, felt grain upgrade
-
-**Card Polish:**
-- Custom card back design, face card K/Q/J icons, card edge 3D shadow, burn card on felt
 
 **Betting UX:**
 - Quick bet shortcuts (Min/Half/Max), committed bet chips visible for all, dealer voice line callouts
