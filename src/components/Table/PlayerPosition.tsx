@@ -28,13 +28,31 @@ export function PlayerPosition({
       }}
     >
       <motion.div
-        animate={{
-          boxShadow: isCurrentTurn
-            ? '0 0 24px rgba(212,168,67,0.4), 0 0 0 2px rgba(212,168,67,0.3)'
-            : '0 0 0 1px rgba(212,168,67,0.1)',
-        }}
-        className="w-24 h-24 rounded-full border-2 border-dashed border-gold/20 mx-auto mb-1"
-      />
+        className="relative w-24 h-24 rounded-full mx-auto mb-1"
+        animate={isCurrentTurn ? {
+          boxShadow: [
+            '0 0 20px rgba(212,168,67,0.3), 0 0 0 2px rgba(212,168,67,0.25)',
+            '0 0 36px rgba(212,168,67,0.5), 0 0 0 3px rgba(212,168,67,0.4)',
+            '0 0 20px rgba(212,168,67,0.3), 0 0 0 2px rgba(212,168,67,0.25)',
+          ],
+          scale: [1, 1.03, 1],
+        } : {}}
+        transition={isCurrentTurn ? {
+          duration: 1.5,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        } : {}}
+      >
+        <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/20" />
+        {isCurrentTurn && (
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            animate={{ opacity: [0.1, 0.25, 0.1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ background: 'radial-gradient(circle, rgba(212,168,67,0.3) 0%, transparent 70%)' }}
+          />
+        )}
+      </motion.div>
 
       <div className="flex justify-center" style={{ marginTop: '-64px' }}>
         {player.hands.length === 0 ? (
