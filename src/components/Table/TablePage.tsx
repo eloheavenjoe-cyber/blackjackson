@@ -187,16 +187,25 @@ export function TablePage() {
             <DiscardPile containerWidth={dims.width} containerHeight={dims.height} />
 
             {/* Casino rules text */}
-            <div className="absolute left-0 right-0 flex justify-center pointer-events-none z-[1]" style={{ top: '8%' }}>
+            <div className="absolute left-0 right-0 flex justify-center pointer-events-none z-[1]" style={{ top: '14%' }}>
               <div className="flex flex-col items-center gap-2">
-                <span className="text-gold/35 text-[13px] font-bold font-serif tracking-[0.25em] uppercase leading-none">
+                <span
+                  className="text-gold/55 text-[13px] font-bold font-serif tracking-[0.25em] uppercase leading-none"
+                  style={{ textShadow: '0 0 6px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)' }}
+                >
                   Blackjack pays {game.rules.blackjackPayout.replace(':', ' to ')}
                 </span>
-                <span className="text-gold/20 text-[10px] font-serif tracking-[0.2em] uppercase leading-none">
+                <span
+                  className="text-gold/35 text-[10px] font-serif tracking-[0.2em] uppercase leading-none"
+                  style={{ textShadow: '0 0 5px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.5)' }}
+                >
                   Dealer must {game.rules.dealerSoft17 === 'stand' ? 'stand on 17' : 'hit soft 17'} and draw to 16
                 </span>
                 {game.rules.insurance && (
-                  <span className="text-gold/15 text-[9px] font-serif tracking-[0.15em] uppercase leading-none">
+                  <span
+                    className="text-gold/25 text-[9px] font-serif tracking-[0.15em] uppercase leading-none"
+                    style={{ textShadow: '0 0 4px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.4)' }}
+                  >
                     Insurance pays 2 to 1
                   </span>
                 )}

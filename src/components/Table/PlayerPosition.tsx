@@ -22,8 +22,8 @@ export function PlayerPosition({
 }: Props) {
   const glowIntensity = Math.min(betAmount / 500, 1)
   const glowBase = 16 + glowIntensity * 24
-  const glowAlpha = 0.15 + glowIntensity * 0.35
-  const ringAlpha = 0.1 + glowIntensity * 0.2
+  const glowAlpha = 0.25 + glowIntensity * 0.45
+  const ringAlpha = 0.18 + glowIntensity * 0.32
 
   return (
     <div
