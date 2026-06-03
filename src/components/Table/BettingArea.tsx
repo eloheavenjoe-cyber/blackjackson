@@ -9,7 +9,7 @@ type Props = {
   minBet: number
   maxBet: number
   pendingBet: number
-  onAddChip: (value: number) => void
+  onAddChip: (value: ChipValue) => void
   onClear: () => void
   onPlaceBet: (amount: number) => void
   alreadyBet: boolean
