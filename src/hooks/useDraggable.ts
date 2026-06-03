@@ -11,7 +11,13 @@ export function useDraggable(
   const [position, setPosition] = useState<Position>(() => {
     try {
       const saved = localStorage.getItem(storageKey)
-      if (saved) return JSON.parse(saved) as Position
+      if (saved) {
+        const parsed = JSON.parse(saved) as Position
+        return {
+          x: Math.max(0, Math.min(parsed.x, window.innerWidth - panelW)),
+          y: Math.max(0, Math.min(parsed.y, window.innerHeight - panelH)),
+        }
+      }
     } catch {}
     return defaultPos
   })
