@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
-import { subscribeToGame, updateGameDoc, submitBetIntent, getGameDoc } from '../firebase/games'
+import { subscribeToGame, updateGameDoc, submitBetIntent, getGameDoc, incrementPendingBet, clearPendingBet } from '../firebase/games'
 import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
 import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
@@ -34,6 +34,7 @@ export function useGameSync() {
           try {
             let updated = setPlayerBet(current, data.playerId, data.amount)
             await updateGameDoc(roomCode, { players: updated.players })
+            await clearPendingBet(roomCode, data.playerId)
             if (allBetsPlaced(updated)) {
               const dealt = dealInitialHands(updated)
               const finalized = finalizeState(dealt)
@@ -116,6 +117,16 @@ export function useGameSync() {
     }
   }
 
+  async function addBetChip(value: number) {
+    if (!game || !user) return
+    await incrementPendingBet(game.id, user.uid, value)
+  }
+
+  async function clearBetChip() {
+    if (!game || !user) return
+    await clearPendingBet(game.id, user.uid)
+  }
+
   async function submitAction(action: PlayerAction) {
     if (!game || !user) return
     const updated = processAction(game, { ...action, playerId: user.uid })
@@ -140,5 +151,5 @@ export function useGameSync() {
     }, 5000)
   }
 
-  return { submitAction, submitBet, scheduleNewRound }
+  return { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip }
 }
