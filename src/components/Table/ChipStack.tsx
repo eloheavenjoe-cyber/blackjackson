@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from 'framer-motion'
 import { Chip } from './Chip'
 
 type ChipValue = 10 | 25 | 50 | 100 | 250 | 500
@@ -20,25 +21,47 @@ function getChipValues(amount: number): ChipValue[] {
   return result
 }
 
+let idCounter = 0
+function nextId() {
+  return ++idCounter
+}
+
 export function ChipStack({ amount, size = 'sm' }: Props) {
   if (amount <= 0) return null
   const values = getChipValues(amount)
   const chipSize = size === 'sm' ? 'small' : 'table'
+  const maxChips = Math.min(values.length, 5)
+  const height = 28 + (maxChips - 1) * 4
 
   return (
-    <div className="relative inline-flex flex-col items-center">
-      <div className="relative" style={{ height: 28 + (values.length - 1) * 4, width: 30 }}>
-        {values.map((v, i) => (
-          <div
-            key={i}
-            className="absolute left-1/2 -translate-x-1/2"
-            style={{ top: i * 4, zIndex: values.length - i }}
-          >
-            <Chip value={v} size={chipSize as 'small' | 'table'} />
-          </div>
-        ))}
-      </div>
-      <span className="text-xs font-bold text-gold mt-1">{amount}</span>
-    </div>
+    <motion.div layout className="relative inline-flex flex-col items-center">
+      <motion.div layout className="relative" style={{ height, width: 30 }}>
+        <AnimatePresence>
+          {values.map((v, i) => (
+            <motion.div
+              key={`${v}-${nextId()}`}
+              initial={{ scale: 0, y: -10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0, y: 8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="absolute left-1/2 -translate-x-1/2"
+              style={{ top: i * 4, zIndex: values.length - i }}
+            >
+              <Chip value={v} size={chipSize as 'small' | 'table'} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+      <motion.span
+        key={amount}
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="text-xs font-bold text-gold mt-1"
+      >
+        {amount}
+      </motion.span>
+    </motion.div>
   )
 }
