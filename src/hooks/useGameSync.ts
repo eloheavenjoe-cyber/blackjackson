@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useAuthStore } from '../stores/authStore'
 import { subscribeToGame, updateGameDoc, submitBetIntent, getGameDoc, incrementPendingBet, clearPendingBet } from '../firebase/games'
-import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound } from '../engine'
+import { processAction, playDealer, settleHands, settleInsurance, dealInitialHands, setPlayerBet, allBetsPlaced, startNewRound, evaluateHand } from '../engine'
 import { collection, onSnapshot as fsOnSnapshot, deleteDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import type { PlayerAction, GameState } from '../engine/types'
@@ -11,6 +11,7 @@ export function useGameSync() {
   const { game, setGame, roomCode, isHost } = useGameStore()
   const { user } = useAuthStore()
   const nextRoundTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoStandTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const gameRef = useRef<GameState | null>(null)
 
   useEffect(() => {
@@ -96,6 +97,7 @@ export function useGameSync() {
   useEffect(() => {
     return () => {
       if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current)
+      if (autoStandTimer.current) clearTimeout(autoStandTimer.current)
     }
   }, [])
 
@@ -132,6 +134,38 @@ export function useGameSync() {
     const updated = processAction(game, { ...action, playerId: user.uid })
     const finalized = finalizeState(updated)
     await writeAndSchedule(finalized)
+
+    if (action.type === 'hit' && isHost && !game.gameOver) {
+      const player = finalized.players.find(p => p.id === user.uid)
+      if (player) {
+        const activeHand = player.hands[player.activeHandIndex]
+        if (activeHand && !activeHand.isStood) {
+          const ev = evaluateHand(activeHand.cards)
+          if (ev.value === 21 && !ev.isBust) {
+            if (autoStandTimer.current) clearTimeout(autoStandTimer.current)
+            autoStandTimer.current = setTimeout(async () => {
+              autoStandTimer.current = null
+              const current = useGameStore.getState().game
+              if (!current || current.phase !== 'playing') return
+              const cp = current.players.find(p => p.id === user.uid)
+              if (!cp) return
+              const cpIdx = current.players.indexOf(cp)
+              if (cpIdx !== current.currentTurn) return
+              const activeH = cp.hands[cp.activeHandIndex]
+              if (!activeH || activeH.isStood) return
+              const evCheck = evaluateHand(activeH.cards)
+              if (evCheck.value === 21 && !evCheck.isBust) {
+                try {
+                  const standResult = processAction(current, { type: 'stand', playerId: user.uid })
+                  const standFinal = finalizeState(standResult)
+                  await writeAndSchedule(standFinal)
+                } catch { /* guard: state may have changed */ }
+              }
+            }, 800)
+          }
+        }
+      }
+    }
   }
 
   async function submitBet(playerId: string, amount: number) {
