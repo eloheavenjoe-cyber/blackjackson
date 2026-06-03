@@ -88,4 +88,5 @@ export type GameState = {
   removedPlayers?: { id: string; name: string; reason: 'bust' | 'kicked' | 'disconnected' }[]
   lastActionAt?: Record<string, number>
   gameOver?: boolean
+  pendingBets?: Record<string, number>
 }

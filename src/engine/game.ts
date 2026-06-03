@@ -106,6 +106,7 @@ export function startNewRound(state: GameState): GameState {
       players: [],
       removedPlayers: newRemoved,
       gameOver: true,
+      pendingBets: {},
     }
   }
 
@@ -127,6 +128,7 @@ export function startNewRound(state: GameState): GameState {
       isActive: true,
       insuranceBet: 0,
       insuranceDecided: false,
-    })),
-  }
+      })),
+      pendingBets: {},
+    }
 }
