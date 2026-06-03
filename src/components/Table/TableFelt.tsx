@@ -44,18 +44,27 @@ export function TableFelt({ children }: { children: ReactNode }) {
           border: '14px solid #5c3a1e',
           boxShadow: `
             inset 0 0 0 3px rgba(212,168,67,0.15),
-            inset 0 0 100px rgba(0,0,0,0.5),
+            inset 0 0 60px rgba(0,0,0,0.3),
+            inset 0 0 150px rgba(0,0,0,0.7),
             0 8px 40px rgba(0,0,0,0.6)
           `,
-          background: `#0a3d1f url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='0.4' fill='%2300000022'/%3E%3C/svg%3E")`,
+          background: `#0a3d1f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E")`,
           overflow: 'hidden',
         }}
       >
-        {/* Felt radial highlight */}
+        {/* Outer lamp glow — wide warm spill */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse 50% 35% at 50% 22%, rgba(13,94,46,0.6) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 60% 45% at 50% 18%, rgba(255,200,100,0.08) 0%, transparent 70%)',
+          }}
+        />
+        {/* Inner lamp hotspot — tight amber focus */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 35% 20% at 50% 22%, rgba(212,168,67,0.25) 0%, transparent 60%)',
+            animation: 'lamp-flicker 3.5s ease-in-out infinite',
           }}
         />
         {children}
