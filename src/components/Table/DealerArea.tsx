@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { Card } from '../../engine/types'
 import { evaluateHand } from '../../engine'
 import { CardComponent } from './CardComponent'
@@ -7,11 +8,24 @@ type Props = {
   dealerHand: Card[]
   showHoleCard: boolean
   phase: string
+  dealIndex?: number | null
+  originX?: number
+  originY?: number
 }
 
-export function DealerArea({ dealerHand, showHoleCard, phase }: Props) {
+export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX, originY }: Props) {
   const ev = dealerHand.length > 0 ? evaluateHand(showHoleCard ? dealerHand : [dealerHand[0]]) : null
   const dealerBJ = dealerHand.length === 2 && evaluateHand(dealerHand).isBlackjack
+  const [flipping, setFlipping] = useState(false)
+  const [wasShowing, setWasShowing] = useState(showHoleCard)
+
+  useEffect(() => {
+    if (showHoleCard && !wasShowing && dealerHand.length >= 2) {
+      const timer = setTimeout(() => setFlipping(true), 300)
+      return () => clearTimeout(timer)
+    }
+    setWasShowing(showHoleCard)
+  }, [showHoleCard, wasShowing, dealerHand.length])
 
   return (
     <div
@@ -39,15 +53,27 @@ export function DealerArea({ dealerHand, showHoleCard, phase }: Props) {
         </div>
       )}
 
-      <div className="flex -space-x-4">
-        {dealerHand.map((card, i) => (
+      <div
+        className="flex -space-x-4"
+        style={{ perspective: 600 }}
+      >
+        {dealerHand.map((card, i) => {
+          const isHoleCard = i === 1 && !showHoleCard
+          const cardDelay = dealIndex != null
+            ? (dealIndex + i) * 0.15
+            : i * 0.2
+          return (
             <CardComponent
-            key={i}
-            card={card}
-            size="lg"
-            delay={i * 0.2}
-          />
-        ))}
+              key={i}
+              card={card}
+              size="lg"
+              delay={cardDelay}
+              originX={originX}
+              originY={originY}
+              isFlipping={i === 1 ? (flipping ? true : showHoleCard ? false : undefined) : undefined}
+            />
+          )
+        })}
         {dealerHand.length === 0 && (
           <div className="w-16 h-24 rounded-lg border-2 border-dashed border-white/10 flex items-center justify-center">
             <span className="text-white/15 text-xl">?</span>

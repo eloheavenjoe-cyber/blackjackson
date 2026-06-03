@@ -8,11 +8,15 @@ type Props = {
   x: number
   y: number
   angle: number
+  dealIndex?: { first: number; second: number } | null
+  originX?: number
+  originY?: number
 }
 
 export function PlayerPosition({
   player, isCurrentTurn,
   x, y, angle: _angle,
+  dealIndex, originX, originY,
 }: Props) {
   return (
     <div
@@ -38,7 +42,14 @@ export function PlayerPosition({
         ) : (
           player.hands.map((hand, hi) => (
             <div key={hi} className={hi > 0 ? 'ml-2' : ''}>
-              <CardHand hand={hand} handIndex={hi} activeHandIndex={player.activeHandIndex} />
+              <CardHand
+                hand={hand}
+                handIndex={hi}
+                activeHandIndex={player.activeHandIndex}
+                dealIndex={dealIndex ? (hi === 0 ? dealIndex.first : dealIndex.second) : null}
+                originX={originX}
+                originY={originY}
+              />
             </div>
           ))
         )}
