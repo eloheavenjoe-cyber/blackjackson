@@ -21,7 +21,7 @@ export function TablePage() {
   const { game, isHost, setRoomCode, reset: resetGame } = useGameStore()
   const { user } = useAuthStore()
   const { setView } = useUIStore()
-  const { submitAction, submitBet, scheduleNewRound } = useGameSync()
+  const { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip } = useGameSync()
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
@@ -278,6 +278,9 @@ export function TablePage() {
           chips={localPlayer.chips}
           minBet={game.rules.minBet}
           maxBet={game.rules.maxBet}
+          pendingBet={game.pendingBets?.[user.uid] ?? 0}
+          onAddChip={addBetChip}
+          onClear={clearBetChip}
           onPlaceBet={(amount) => submitBet(user.uid, amount)}
           alreadyBet={false}
         />
@@ -288,6 +291,9 @@ export function TablePage() {
           chips={localPlayer.chips}
           minBet={game.rules.minBet}
           maxBet={game.rules.maxBet}
+          pendingBet={0}
+          onAddChip={() => {}}
+          onClear={() => {}}
           onPlaceBet={() => {}}
           alreadyBet={true}
           currentBetAmount={localPlayer.hands[0].bet}
