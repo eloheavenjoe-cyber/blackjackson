@@ -89,19 +89,17 @@ export function TablePage() {
   )
 
   const dealIndices = useMemo(() => {
-    const playerCount = game?.players.length ?? 0
-    if (playerCount === 0 || game?.phase !== 'dealing') return new Map<string, { first: number; second: number }>()
+    if (!game || game.phase !== 'dealing') return new Map<string, { first: number; second: number }>()
     const map = new Map<string, { first: number; second: number }>()
     let idx = 0
-    game!.players.forEach((p) => {
+    game.players.forEach((p) => {
       map.set(p.id, { first: idx++, second: 0 })
     })
-    const dealerFirst = idx++
-    game!.players.forEach((p) => {
+    idx++
+    game.players.forEach((p) => {
       const entry = map.get(p.id)!
       entry.second = idx++
     })
-    const dealerSecond = idx++
     return map
   }, [game?.players, game?.phase])
 
