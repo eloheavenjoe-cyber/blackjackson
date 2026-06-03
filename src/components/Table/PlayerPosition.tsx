@@ -1,31 +1,19 @@
-import type { PlayerState, GamePhase, GameRules } from '../../engine/types'
+import type { PlayerState } from '../../engine/types'
 import { CardHand } from './CardHand'
-import { ActionButtons } from './ActionButtons'
-import { TurnTimer } from './TurnTimer'
 import { motion } from 'framer-motion'
 
 type Props = {
   player: PlayerState
   isCurrentTurn: boolean
-  isLocalPlayer: boolean
-  phase: GamePhase
-  turnTimeLimit: number
-  turnStartedAt: number | null
-  onAction: (action: any) => void
-  rules: GameRules
-  dealerUpcard: string | null
   x: number
   y: number
   angle: number
 }
 
 export function PlayerPosition({
-  player, isCurrentTurn, isLocalPlayer, phase,
-  turnTimeLimit, turnStartedAt, onAction, rules, dealerUpcard,
+  player, isCurrentTurn,
   x, y, angle: _angle,
 }: Props) {
-  const canAct = isCurrentTurn && isLocalPlayer && (phase === 'playing' || phase === 'insurance')
-
   return (
     <div
       className="absolute"
@@ -55,30 +43,6 @@ export function PlayerPosition({
           ))
         )}
       </div>
-
-      {canAct && (
-        <div className="flex justify-center mt-2">
-          <div className="space-y-1.5">
-            {turnTimeLimit > 0 && turnStartedAt && phase === 'playing' && (
-              <TurnTimer
-                timeLimit={turnTimeLimit}
-                startedAt={turnStartedAt}
-                onTimeout={() => onAction({ type: 'stand' })}
-              />
-            )}
-            <ActionButtons
-              hand={player.hands[player.activeHandIndex]}
-              chips={player.chips}
-              onAction={onAction}
-              rules={rules}
-              handIndex={player.activeHandIndex}
-              playerHands={player.hands}
-              phase={phase}
-              dealerUpcard={dealerUpcard}
-            />
-          </div>
-        </div>
-      )}
 
     </div>
   )
