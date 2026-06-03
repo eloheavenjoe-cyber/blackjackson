@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import type { Card } from '../../engine/types'
 import { evaluateHand } from '../../engine'
 import { CardComponent } from './CardComponent'
@@ -14,18 +15,30 @@ type Props = {
 }
 
 export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX, originY }: Props) {
-  const ev = dealerHand.length > 0 ? evaluateHand(showHoleCard ? dealerHand : [dealerHand[0]]) : null
-  const dealerBJ = dealerHand.length === 2 && evaluateHand(dealerHand).isBlackjack
   const [flipping, setFlipping] = useState(false)
-  const [wasShowing, setWasShowing] = useState(showHoleCard)
+  const [flipComplete, setFlipComplete] = useState(false)
+  const showFull = showHoleCard && flipComplete
+
+  const ev = dealerHand.length > 0 ? evaluateHand(showFull ? dealerHand : [dealerHand[0]]) : null
+  const dealerBJ = dealerHand.length === 2 && evaluateHand(dealerHand).isBlackjack
 
   useEffect(() => {
-    if (showHoleCard && !wasShowing && dealerHand.length >= 2) {
-      const timer = setTimeout(() => setFlipping(true), 300)
-      return () => clearTimeout(timer)
+    if (showHoleCard && dealerHand.length >= 2) {
+      const delay = setTimeout(() => setFlipping(true), 300)
+      return () => clearTimeout(delay)
     }
-    setWasShowing(showHoleCard)
-  }, [showHoleCard, wasShowing, dealerHand.length])
+    if (!showHoleCard) {
+      setFlipping(false)
+      setFlipComplete(false)
+    }
+  }, [showHoleCard, dealerHand.length])
+
+  useEffect(() => {
+    if (flipping) {
+      const done = setTimeout(() => setFlipComplete(true), 500)
+      return () => clearTimeout(done)
+    }
+  }, [flipping])
 
   return (
     <div
@@ -69,7 +82,7 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
               delay={cardDelay}
               originX={originX}
               originY={originY}
-              isFlipping={i === 1 ? (flipping ? true : showHoleCard ? false : undefined) : undefined}
+              isFlipping={i === 1 ? (flipping ? true : false) : undefined}
             />
           )
         })}
@@ -81,9 +94,15 @@ export function DealerArea({ dealerHand, showHoleCard, phase, dealIndex, originX
       </div>
 
       {ev && phase !== 'waiting' && phase !== 'betting' && phase !== 'dealing' && (
-        <div className="text-sm font-mono text-white bg-black/40 px-3 py-0.5 rounded-full mt-2">
-          {showHoleCard ? ev.value : ev.soft ? `${ev.value - 10}/${ev.value}` : ev.value}
-        </div>
+        <motion.div
+          key={showFull ? 'full' : 'partial'}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="text-sm font-mono text-white bg-black/40 px-3 py-0.5 rounded-full mt-2"
+        >
+          {showFull ? ev.value : ev.soft ? `${ev.value - 10}/${ev.value}` : ev.value}
+        </motion.div>
       )}
     </div>
   )
