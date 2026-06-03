@@ -8,6 +8,7 @@ type Props = {
   x: number
   y: number
   angle: number
+  betAmount?: number
   dealIndex?: { first: number; second: number } | null
   originX?: number
   originY?: number
@@ -16,8 +17,14 @@ type Props = {
 export function PlayerPosition({
   player, isCurrentTurn,
   x, y, angle: _angle,
+  betAmount = 0,
   dealIndex, originX, originY,
 }: Props) {
+  const glowIntensity = Math.min(betAmount / 500, 1)
+  const glowBase = 16 + glowIntensity * 24
+  const glowAlpha = 0.15 + glowIntensity * 0.35
+  const ringAlpha = 0.1 + glowIntensity * 0.2
+
   return (
     <div
       className="absolute"
@@ -31,25 +38,30 @@ export function PlayerPosition({
         className="relative w-24 h-24 rounded-full mx-auto mb-1"
         animate={isCurrentTurn ? {
           boxShadow: [
-            '0 0 20px rgba(212,168,67,0.3), 0 0 0 2px rgba(212,168,67,0.25)',
-            '0 0 36px rgba(212,168,67,0.5), 0 0 0 3px rgba(212,168,67,0.4)',
-            '0 0 20px rgba(212,168,67,0.3), 0 0 0 2px rgba(212,168,67,0.25)',
+            `0 0 ${glowBase}px rgba(212,168,67,${glowAlpha}), 0 0 0 ${2 + glowIntensity}px rgba(212,168,67,${ringAlpha})`,
+            `0 0 ${glowBase + 16}px rgba(212,168,67,${glowAlpha + 0.1}), 0 0 0 ${3 + glowIntensity}px rgba(212,168,67,${ringAlpha + 0.1})`,
+            `0 0 ${glowBase}px rgba(212,168,67,${glowAlpha}), 0 0 0 ${2 + glowIntensity}px rgba(212,168,67,${ringAlpha})`,
           ],
           scale: [1, 1.03, 1],
-        } : {}}
+        } : {
+          boxShadow: `0 0 ${glowBase}px rgba(212,168,67,${glowAlpha * 0.5}), 0 0 0 1px rgba(212,168,67,${ringAlpha * 0.3})`,
+        }}
         transition={isCurrentTurn ? {
           duration: 1.5,
           repeat: Infinity,
           ease: 'easeInOut',
         } : {}}
       >
-        <div className="absolute inset-0 rounded-full border-2 border-dashed border-gold/20" />
+        <div
+          className="absolute inset-0 rounded-full border-2 border-dashed"
+          style={{ borderColor: `rgba(212,168,67,${0.08 + glowIntensity * 0.15})` }}
+        />
         {isCurrentTurn && (
           <motion.div
             className="absolute inset-0 rounded-full"
-            animate={{ opacity: [0.1, 0.25, 0.1] }}
+            animate={{ opacity: [0.05 + glowIntensity * 0.05, 0.15 + glowIntensity * 0.15, 0.05 + glowIntensity * 0.05] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ background: 'radial-gradient(circle, rgba(212,168,67,0.3) 0%, transparent 70%)' }}
+            style={{ background: `radial-gradient(circle, rgba(212,168,67,${0.2 + glowIntensity * 0.2}) 0%, transparent 70%)` }}
           />
         )}
       </motion.div>

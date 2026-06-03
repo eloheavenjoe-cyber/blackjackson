@@ -139,6 +139,13 @@ Tests pass: `npx vitest run`
 - ~~Card dealing animation~~ — Cards fly from shoe position (center-top of felt), sequential dealing order across players and dealer
 - ~~Hole card reveal~~ — 3D flip animation on dealer's second card using CSS rotateY + backface-visibility
 - ~~Chip stacking animation~~ — Framer-motion AnimatePresence entry/exit animations in ChipStack when pending bets change
+- ~~Win/Lose result animation~~ — Per-result motion: BJ burst scale, WIN spring bounce, LOSE shake, staggered split-hand reveals
+- ~~Betting circle glow~~ — Ring glow intensity scales proportionally to bet amount (pending or committed)
+- ~~No More Bets sweep~~ — Red banner slides in from top when dealing phase begins, auto-dismisses after 1s
+- ~~Chip count animation~~ — Player chip totals crossfade on change using key-based motion
+- ~~Player turn breathing glow~~ — Active player's ring pulses with expanding boxShadow + inner radial glow
+- ~~Casino rules text~~ — 3-row tiered text centered on felt showing Blackjack pays, Dealer rules, Insurance
+- ~~Table size~~ — Increased 10% to 990px × 528px
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGameSync } from '../../hooks/useGameSync'
 import { useGameStore } from '../../stores/gameStore'
 import { useAuthStore } from '../../stores/authStore'
@@ -26,7 +27,9 @@ export function TablePage() {
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
+  const [showNoMoreBets, setShowNoMoreBets] = useState(false)
   const prevRoundRef = useRef(game?.roundNumber)
+  const prevPhaseRef = useRef(game?.phase)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ width: 800, height: 500 })
 
@@ -48,6 +51,15 @@ export function TablePage() {
       setNotFound(false)
     }
   }, [game, paramCode])
+
+  useEffect(() => {
+    if (game && prevPhaseRef.current === 'betting' && game.phase === 'dealing') {
+      setShowNoMoreBets(true)
+      const timer = setTimeout(() => setShowNoMoreBets(false), 1000)
+      return () => clearTimeout(timer)
+    }
+    prevPhaseRef.current = game?.phase
+  }, [game?.phase])
 
   useEffect(() => {
     if (game && prevRoundRef.current !== undefined && game.roundNumber !== prevRoundRef.current) {
@@ -165,7 +177,7 @@ export function TablePage() {
             </div>
 
             {/* Casino rules text */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1]" style={{ paddingTop: '18%' }}>
+            <div className="absolute left-0 right-0 flex justify-center pointer-events-none z-[1]" style={{ top: '8%' }}>
               <div className="flex flex-col items-center gap-2">
                 <span className="text-gold/35 text-[13px] font-bold font-serif tracking-[0.25em] uppercase leading-none">
                   Blackjack pays {game.rules.blackjackPayout.replace(':', ' to ')}
@@ -180,6 +192,23 @@ export function TablePage() {
                 )}
               </div>
             </div>
+
+            {/* No More Bets sweep */}
+            <AnimatePresence>
+              {showNoMoreBets && (
+                <motion.div
+                  initial={{ y: '-100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+                  className="absolute inset-x-0 top-[30%] z-20 flex justify-center pointer-events-none"
+                >
+                  <div className="bg-red-900/90 backdrop-blur px-10 py-3 rounded-lg border border-red-500/30 shadow-2xl">
+                    <span className="text-gold text-xl font-black tracking-[0.3em] uppercase">No More Bets</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Game over overlay */}
             {game.gameOver && (
@@ -203,6 +232,7 @@ export function TablePage() {
                     x={positions[i]?.x ?? 0}
                     y={positions[i]?.y ?? 0}
                     angle={positions[i]?.angle ?? 0}
+                    betAmount={game.phase === 'betting' ? (game.pendingBets?.[player.id] ?? player.hands[0]?.bet ?? 0) : (player.hands[0]?.bet ?? 0)}
                     dealIndex={game.phase === 'dealing' ? (dealIndices.get(player.id) ?? null) : null}
                     originX={shoeOrigin.x - (positions[i]?.x ?? 0)}
                     originY={shoeOrigin.y - (positions[i]?.y ?? 0)}
@@ -263,7 +293,15 @@ export function TablePage() {
                   <span className="text-gray-500 ml-1">(Away)</span>
                 )}
               </span>
-              <span className="text-gold text-xs">{player.chips} chips</span>
+              <motion.span
+                key={player.chips}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-gold text-xs"
+              >
+                {player.chips} chips
+              </motion.span>
             </div>
           ))}
         </div>
