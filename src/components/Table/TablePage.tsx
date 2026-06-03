@@ -273,7 +273,7 @@ export function TablePage() {
       </div>
 
       {/* Betting area below the table */}
-      {isBetting && !allBet && localPlayer && (
+      {isBetting && !allBet && localPlayer && !localPlayer.hands[0]?.bet && (
         <BettingArea
           chips={localPlayer.chips}
           minBet={game.rules.minBet}
