@@ -87,7 +87,7 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
     const rawSum = raw.reduce((a, b) => a + b, 0)
     const values = rawSum === (currentBetAmount ?? 0) ? raw : []
     return (
-      <div className="flex justify-center items-center gap-3 pt-8 pb-3">
+      <div className="flex justify-center items-center gap-3 pt-12 pb-3">
         <div className="flex items-center gap-3 bg-black/40 backdrop-blur rounded-2xl px-5 py-3 border border-gold/20">
           <span className="text-gold/60 text-xs uppercase tracking-wider">Bet placed</span>
           <ChipArea values={values} />
@@ -99,7 +99,7 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
 
   if (chips < minBet) {
     return (
-      <div className="flex justify-center pt-8 pb-3">
+      <div className="flex justify-center pt-12 pb-3">
         <p className="text-gray-500 text-sm">Not enough chips to bet</p>
       </div>
     )
@@ -123,7 +123,7 @@ export function BettingArea({ chips, minBet, maxBet, onPlaceBet, alreadyBet, cur
   }
 
   return (
-    <div className="pt-8 pb-3">
+    <div className="pt-12 pb-3">
       <div className="flex items-center justify-center gap-6">
         <div className="flex items-center gap-3">
           <button onClick={clear} className="text-gray-400 hover:text-white text-xs cursor-pointer uppercase tracking-wider">

@@ -197,7 +197,7 @@ export function TablePage() {
                   <TurnTimer
                     timeLimit={game.turnTimeLimit}
                     startedAt={game.turnStartedAt}
-                    onTimeout={() => submitAction({ type: 'stand', playerId: lp.id })}
+                    onTimeout={() => submitAction({ type: 'stand' })}
                   />
                 )}
                 <ActionButtons
