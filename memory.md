@@ -175,6 +175,39 @@ Tests pass: `npx vitest run`
 3. **Firestore rules** — Still in test mode (open access)
 4. **Chunk size** — Main bundle ~754KB; could use code splitting
 
+## Chat, Music & Dealer Features (2026-06-04)
+
+**Chat System:**
+- Draggable collapsible ChatPanel (portal, glassmorphism, localStorage position)
+- Firestore subcollection `games/{code}/chat/` for messages (4 types: message/tip/emoji/system)
+- `/tip <name> <amount>` command — prefix match, tip intents via `games/{code}/tips/`, host-processed with `FieldValue.increment` for concurrency safety
+- Emoji bar (12 emojis), click sends emoji; floats up from sender's seat on table felt
+- Unread badge on collapsed ChatToggle pill button
+- Zustand `chatStore`, `useChat` hook, `ChatMessage`, `EmojiBar`, `EmojiFloat` components
+
+**Music Player:**
+- Draggable collapsible MusicPanel (same pattern as chat)
+- YouTube IFrame API (paste URL, host controls play/pause/seek, all clients sync via Firestore `music` field)
+- Baked-in playlist of 6 royalty-free tracks (HTML Audio, drift correction every 5s)
+- Host-only transport controls; non-host sees "Now Playing" + per-player volume
+- Per-player volume slider, MusicToggle FAB with pulse animation
+- `useMusic` hook, `MusicControls`, `YoutubePlayer`, `PlaylistPicker` components
+
+**Dealer Portraits:**
+- 4 personas (default, lady_gold, mr_velvet, the_house), selectable in CreateGameForm
+- DealerArea rewritten: portrait image replaces name/D-icon, cards shifted down
+- SVG placeholders in `public/dealers/`, `DealerPortrait` with onError card-suit fallback
+- Stored as `dealerPersona` on GameState, passed through createGame engine
+
+**New files:** `src/components/Chat/` (5), `src/components/Music/` (5), `src/components/Dealer/` (1), `src/hooks/useDraggable.ts`, `src/hooks/useChat.ts`, `src/hooks/useMusic.ts`, `src/firebase/chat.ts`, `src/firebase/tips.ts`, `src/stores/chatStore.ts`, `src/constants/emojis.ts`, `src/constants/music.ts`, `public/dealers/` (4 SVGs)
+
+**Key decisions:**
+- Chat messages in subcollection (not game doc array) to keep game doc lean
+- Tip intents follow same two-phase pattern as bet intents
+- Music uses top-level `music` field on GameState (small, atomic reads with game state)
+- Draggable hook shared by both panels via `useDraggable(storageKey, defaultPos)`
+- ChatToggle + MusicToggle both positioned at `bottom: 24`, at `right: 24` and `right: 88`
+
 ## Polish Todo
 
 **Sound:**
@@ -187,7 +220,8 @@ Tests pass: `npx vitest run`
 - ~~Round intro animation~~, ~~reshuffle animation~~, game over dramatic sequence
 
 **Misc:**
-- Room code watermark, player join/leave toasts, emoji reactions, table color themes
+- ~~Emoji reactions~~, room code watermark, player join/leave toasts, table color themes
+- Pixabay track URLs in `constants/music.ts` need real working URLs (placeholders currently)
 
 ## Firebase Setup
 
