@@ -41,10 +41,9 @@ export function DealerArea({ dealerHand, showHoleCard, phase }: Props) {
 
       <div className="flex -space-x-4">
         {dealerHand.map((card, i) => (
-          <CardComponent
+            <CardComponent
             key={i}
             card={card}
-            faceDown={!showHoleCard && i === 1}
             size="lg"
             delay={i * 0.2}
           />

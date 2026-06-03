@@ -1,9 +1,9 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Card } from '../../engine/types'
 
 type Props = {
   card?: Card
-  faceDown?: boolean
   size?: 'sm' | 'md' | 'lg'
   delay?: number
   originX?: number
@@ -54,19 +54,20 @@ function CardBack() {
 }
 
 export function CardComponent({
-  card, faceDown, size = 'md', delay = 0,
+  card, size = 'md', delay = 0,
   originX = -60, originY = -300,
   isFlipping,
 }: Props) {
-  const rot = (Math.random() - 0.5) * 6
+  const rot = useMemo(() => (Math.random() - 0.5) * 6, [])
 
   return (
+    <div style={{ perspective: 600 }}>
     <motion.div
       initial={{ x: originX, y: originY, rotate: -15 + rot, opacity: 0 }}
       animate={
         isFlipping !== undefined
           ? { x: 0, y: 0, rotateY: isFlipping ? 180 : 0, rotate: 0, opacity: 1 }
-          : { x: 0, y: 0, rotate: 0, opacity: 1 }
+          : { x: 0, y: 0, rotateY: 180, rotate: 0, opacity: 1 }
       }
       transition={{
         duration: isFlipping !== undefined ? 0.5 : 0.6,
@@ -78,7 +79,6 @@ export function CardComponent({
       className={`${sizeClasses[size]} rounded-lg shadow-xl flex-shrink-0`}
       style={{
         transformStyle: 'preserve-3d',
-        perspective: 600,
       }}
     >
       {/* Face-down (back) — visible at rotateY=0 */}
@@ -100,5 +100,6 @@ export function CardComponent({
         <CardFace card={card} size={size} />
       </div>
     </motion.div>
+    </div>
   )
 }
