@@ -165,13 +165,20 @@ export function TablePage() {
             </div>
 
             {/* Casino rules text */}
-            <div className="flex justify-center py-1 relative z-10 pointer-events-none">
-              <span className="text-gold/25 text-[10px] font-serif tracking-[0.15em] uppercase">
-                Blackjack pays {game.rules.blackjackPayout}
-                {game.rules.insurance ? ' \u00B7 Insurance pays 2:1' : ''}
-                {game.rules.surrender !== 'none' ? ' \u00B7 Surrender available' : ''}
-                {' \u00B7 Dealer '}{game.rules.dealerSoft17 === 'stand' ? 'stands' : 'hits'} on soft 17
-              </span>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1]" style={{ paddingTop: '18%' }}>
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-gold/35 text-[13px] font-bold font-serif tracking-[0.25em] uppercase leading-none">
+                  Blackjack pays {game.rules.blackjackPayout.replace(':', ' to ')}
+                </span>
+                <span className="text-gold/20 text-[10px] font-serif tracking-[0.2em] uppercase leading-none">
+                  Dealer must {game.rules.dealerSoft17 === 'stand' ? 'stand on 17' : 'hit soft 17'} and draw to 16
+                </span>
+                {game.rules.insurance && (
+                  <span className="text-gold/15 text-[9px] font-serif tracking-[0.15em] uppercase leading-none">
+                    Insurance pays 2 to 1
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Game over overlay */}
