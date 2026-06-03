@@ -11,6 +11,9 @@ import { ChatPanel } from '../Chat/ChatPanel'
 import { EmojiFloat } from '../Chat/EmojiFloat'
 import { ChatToggle } from '../Chat/ChatToggle'
 import { useChatStore } from '../../stores/chatStore'
+import { useMusic } from '../../hooks/useMusic'
+import { MusicPanel } from '../Music/MusicPanel'
+import { MusicToggle } from '../Music/MusicToggle'
 import { TableFelt, computePositions } from './TableFelt'
 import { DealerArea } from './DealerArea'
 import { PlayerPosition } from './PlayerPosition'
@@ -35,6 +38,9 @@ export function TablePage() {
   const { submitAction, submitBet, scheduleNewRound, addBetChip, clearBetChip, quickBet } = useGameSync()
   const { play } = useSound()
   const { sendMessage, sendEmoji, sendTip } = useChat(game?.id ?? null)
+  const { updateMusic, setVolume, onTimeUpdate } = useMusic(game?.id ?? null, isHost)
+  const [musicVolume, setMusicVolume] = useState(0.5)
+  const [isMusicOpen, setIsMusicOpen] = useState(false)
   const navigate = useNavigate()
   const [notFound, setNotFound] = useState(false)
   const [showReshuffle, setShowReshuffle] = useState(false)
@@ -546,6 +552,25 @@ export function TablePage() {
       )}
 
       <ChatToggle onClick={() => useChatStore.getState().setIsOpen(true)} />
+
+      <MusicToggle
+        isPlaying={!!(game?.music?.playing)}
+        onClick={() => setIsMusicOpen(true)}
+      />
+
+      {!game.gameOver && (
+        <MusicPanel
+          roomCode={game?.id ?? ''}
+          isHost={isHost}
+          music={game?.music}
+          volume={musicVolume}
+          isOpen={isMusicOpen}
+          onClose={() => setIsMusicOpen(false)}
+          onCommand={updateMusic}
+          onVolumeChange={(v) => { setMusicVolume(v); setVolume(v) }}
+          onTimeUpdate={onTimeUpdate}
+        />
+      )}
 
       {emojiFloats.map((ef) => (
         <EmojiFloat
