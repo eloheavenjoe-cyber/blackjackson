@@ -11,7 +11,7 @@ export function MusicToggle({ isPlaying, onClick }: Props) {
       onClick={onClick}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`fixed z-50 rounded-full w-11 h-11 flex items-center justify-center shadow-2xl border-2 transition-colors ${
+      className={`fixed z-[60] rounded-full w-11 h-11 flex items-center justify-center shadow-2xl border-2 transition-colors ${
         isPlaying
           ? 'bg-gold/90 hover:bg-gold text-gray-900 border-gold/30'
           : 'bg-black/70 hover:bg-black/80 text-white/70 border-white/10'

@@ -103,7 +103,7 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
         y: position.y,
       }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      className={`fixed z-50 bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl ${
+      className={`fixed z-[60] bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl ${
         isDragging ? 'cursor-grabbing' : ''
       }`}
       style={{ width: 340, height: 420 }}
