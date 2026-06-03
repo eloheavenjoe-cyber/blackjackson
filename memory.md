@@ -42,12 +42,12 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 | `src/firebase/games.ts` | Firestore CRUD + `submitBetIntent` + `betIntentsCollection` + `incrementPendingBet`/`clearPendingBet` (atomic FieldValue ops) |
 | `src/stores/authStore.ts` | Zustand: auth user + display name |
 | `src/stores/gameStore.ts` | Zustand: game state, roomCode, isHost, reset |
-| `src/stores/uiStore.ts` | Zustand: sound toggle, currentView (lobby/waiting) |
-| `src/hooks/useGameSync.ts` | Firestore sub + bet intent listener + `finalizeState` + `writeAndSchedule` + timer auto-stand + `scheduleNewRound` |
-| `src/hooks/useSound.ts` | Web Audio API sound effects (6 types, gated by soundEnabled) |
+| `src/stores/uiStore.ts` | Zustand: soundEnabled toggle, volume slider (0-1), currentView (lobby/waiting) |
+| `src/hooks/useGameSync.ts` | Firestore sub + bet intent listener + `finalizeState` + `writeAndSchedule` + timer auto-stand + auto-stand on hit-to-21 + `quickBet` + `scheduleNewRound` |
+| `src/hooks/useSound.ts` | Web Audio API synthesized sound effects (9 types: deal, chip, win, lose, blackjack, bust, turn, shuffle, tick), master GainNode for volume control |
 | `src/components/Lobby/` | CreateGameForm, JoinGameForm, RulesConfig, WaitingRoom, LobbyPage |
 | `src/components/Table/` | TableFelt, DealerArea, PlayerPosition, CardComponent, CardHand, Chip, ChipStack, ActionButtons, TurnTimer, RoundResult, BettingArea, TablePage, Shoe, DiscardPile, LimitPlaque |
-| `src/components/Shared/` | Button, Modal, PlayerAvatar |
+| `src/components/Shared/` | Button, Modal, PlayerAvatar, VolumeControl |
 | `docs/superpowers/specs/` | Design specs |
 | `docs/superpowers/plans/` | Implementation plans |
 
@@ -60,13 +60,17 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - **Players** — positioned on elliptical arc via `computePositions()` (160°–20° concave-down). Cards deal sequentially from shoe origin. Betting circles have dashed gold borders with breathing glow on active turn; ring glow intensity scales with bet amount.
 - **Player info strip** — below table, `minHeight: 32` to reserve space, arc-aligned X positions, shows name + animated chip count + (Away) badge.
 - **Action buttons strip** — in document flow below info strip (`mt-2`), arc-aligned via `paddingLeft` + `-translate-x-1/2`. Never clipped.
-- **BettingArea** — `pt-20` below table. Chip tray (6 denominations) + pending bet amount + Clear + Place Bet. No accumulator container — chips render on the table felt via `ChipStack` with spring entry/exit animations.
-- **Casino rules text** — 3-tier gold text centered on felt at `top: 8%`: "Blackjack pays 3 to 2" (bold 13px), "Dealer must stand on 17 and draw to 16" (10px), "Insurance pays 2 to 1" (9px, conditional).
+- **BettingArea** — `pt-20` below table. Chip tray (6 denominations) + pending bet amount + Clear + Place Bet + quick bet shortcuts (Min/Half/Max). Committed bet chips visible on felt for all players via `ChipStack` with spring entry/exit animations.
+- **Casino rules text** — 3-tier gold text centered on felt at `top: 14%` with dark text-shadow for readability: "Blackjack pays 3 to 2" (bold 13px, text-gold/55), "Dealer must stand on 17 and draw to 16" (10px, text-gold/35), "Insurance pays 2 to 1" (9px, text-gold/25, conditional).
 - **No More Bets sweep** — red banner slides in from top when phase hits `dealing`, auto-dismisses after 1s.
+- **Round intro** — "Round X" overlay animates in on table felt when round number changes: spring-scale + staggered text (label then number), ~1.8s duration.
+- **Reshuffle banner** — spring-in card-wobble animation with playing card icons wiggling around "Reshuffling" text.
 - **Host buttons** — Deal Cards / New Round below the table, centered.
 - **RoundResult** — per-result animations: BJ burst (scale 0→1.3→1), WIN spring bounce, LOSE shake + red flash, PUSH/SURRENDER fade. Staggered for split hands. Payout slides up with delay.
 - **Game Over** — full overlay with backdrop blur, redirects to lobby.
 - **Back to Lobby** — resets both gameStore and uiStore before navigating.
+- **Sound** — 9 synthesized sound types via Web Audio API: deal (triangle whoosh), chip (square click), win (ascending C-E-G), lose (descending sawtooth), blackjack (ascending C-E-G-C'), bust (dual-oscillator groan), turn (two-tone chime), shuffle (cascading triangle notes), tick (short sine). Volume slider in `uiStore` via master GainNode, fixed bottom-right corner on all pages. Gated by `soundEnabled` toggle.
+- **Auto-stand on 21** — When a player hits to exactly 21 (not bust), host schedules a delayed auto-stand after 800ms with safety guards (phase/turn/hand validation).
 
 ## Key Engine Functions
 
@@ -94,6 +98,8 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - `writeAndSchedule(state)` — writes to Firestore, calls `scheduleNewRound()` if `phase === 'round_end'`
 - Bet intent listener — calls `getGameDoc` for authoritative state (avoids stale store reads)
 - Timer auto-stand — tracks consecutive timeouts, marks inactive after 2
+- Auto-stand on 21 — after hit-to-21, schedules delayed stand (800ms, host-only)
+- `quickBet(target)` — clears pending then uses greedy chip denomination breakdown to reach exact bet amount
 - `scheduleNewRound` — uses `gameRef` for fresh state
 
 ## Test Coverage
@@ -153,23 +159,32 @@ Tests pass: `npx vitest run`
 - ~~Hole card reveal timing~~ — Hand value stays hidden until flip animation completes; hole card stays face-down during dealing
 - ~~Table atmosphere~~ — Warm two-layer lamp glow with flicker, two-layer dark vignette, fabric noise felt grain, dealer shoe, discard pile, burn card, brass limit plaque
 - ~~Card polish~~ — Casino SVG card back (navy/gold/burgundy with filigree), K/Q/J face card figure icons, 3D edge shadow
+- ~~Rules text readability~~ — Moved from `top: 8%` to `14%`, boosted opacity (gold/55, /35, /25), added dark text-shadow halos
+- ~~Ring glow visibility~~ — Bumped glowAlpha base 0.15→0.25 and ringAlpha base 0.10→0.18
+- ~~Sound effects~~ — 9 Web Audio API synthesized sounds wired to all game events (deal, chip, win, lose, BJ, bust, turn, shuffle, tick)
+- ~~Volume control~~ — Master GainNode + fixed bottom-right slider, `soundEnabled` toggle, volume stored in uiStore
+- ~~Committed bet chips~~ — Chips visible on felt for all players during betting, not just pending bets
+- ~~Round intro animation~~ — "Round X" spring-scale overlay when round number changes
+- ~~Reshuffle animation~~ — Card-wobble banner replacing old pulsing text
+- ~~Quick bet shortcuts~~ — Min/Half/Max pill buttons in BettingArea, greedy chip denomination breakdown via `quickBet()`
+- ~~Auto-stand on 21~~ — 800ms delayed stand after hit-to-21, host-only, with state validation guards
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
 2. **Mobile layout** — Not addressed
 3. **Firestore rules** — Still in test mode (open access)
-4. **Chunk size** — Main bundle ~738KB; could use code splitting
+4. **Chunk size** — Main bundle ~754KB; could use code splitting
 
 ## Polish Todo
 
 **Sound:**
-- Chip click sound, card deal whoosh, dealer bust groan, blackjack chime, ambient casino hum, player turn alert
+- ~~Chip click sound~~, ~~card deal whoosh~~, ~~dealer bust groan~~, ~~blackjack chime~~, ambient casino hum, ~~player turn alert~~
 
 **Betting UX:**
-- Quick bet shortcuts (Min/Half/Max), committed bet chips visible for all, dealer voice line callouts
+- ~~Quick bet shortcuts (Min/Half/Max)~~, ~~committed bet chips visible for all~~, dealer voice line callouts
 
 **Round Flow:**
-- Round intro animation, reshuffle animation, game over dramatic sequence
+- ~~Round intro animation~~, ~~reshuffle animation~~, game over dramatic sequence
 
 **Misc:**
 - Room code watermark, player join/leave toasts, emoji reactions, table color themes
