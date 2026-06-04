@@ -13,7 +13,8 @@ export function useMusic(roomCode: string | null, isHost: boolean) {
   const updateMusic = useCallback(
     async (patch: Partial<MusicState>) => {
       if (!roomCode || !isHost) return
-      await updateGameDoc(roomCode, { music: patch } as any)
+      const current = useGameStore.getState().game?.music
+      await updateGameDoc(roomCode, { music: { ...current, ...patch } } as any)
     },
     [roomCode, isHost],
   )

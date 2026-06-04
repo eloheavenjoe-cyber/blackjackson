@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useDraggable } from '../../hooks/useDraggable'
 import { MusicControls } from './MusicControls'
 import { YoutubePlayer } from './YoutubePlayer'
@@ -13,13 +12,13 @@ type Props = {
   music: MusicState | null | undefined
   volume: number
   isOpen: boolean
-  onClose: () => void
+  onToggle: () => void
   onCommand: (cmd: Partial<MusicState>) => void
   onVolumeChange: (vol: number) => void
   onTimeUpdate: (time: number) => void
 }
 
-export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, onCommand, onVolumeChange, onTimeUpdate }: Props) {
+export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onToggle, onCommand, onVolumeChange, onTimeUpdate }: Props) {
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [activeTab, setActiveTab] = useState<'youtube' | 'playlist'>('youtube')
   const [duration, setDuration] = useState(0)
@@ -84,114 +83,113 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
 
   return createPortal(
     <div
-      className={`fixed z-[60] bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl ${
-        isDragging ? 'cursor-grabbing' : ''
-      }`}
-      style={{ left: position.x, top: position.y, width: 340, minHeight: isOpen ? 220 : 0, overflow: 'hidden' }}
+      className={`fixed z-[60] ${isDragging ? 'cursor-grabbing' : ''}`}
+      style={{ left: position.x, top: position.y, width: 340 }}
     >
-      <AnimatePresence>
-        {isOpen ? (
-          <motion.div
-            key="expanded"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div
-              className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 cursor-grab active:cursor-grabbing select-none"
-              {...dragHandlers}
-            >
-              <span className="text-gold text-sm font-semibold">{'\u266A'} Music Player</span>
+      {/* Always-visible draggable header bar */}
+      <div
+        className="flex items-center justify-between px-4 py-1.5 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl cursor-grab active:cursor-grabbing select-none shadow-2xl"
+        style={{ borderRadius: isOpen ? '12px 12px 0 0' : '12px' }}
+        {...dragHandlers}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-gold/80 text-xs font-semibold">{'\u266A'} Music Player</span>
+          {!isOpen && music && (
+            <span className="text-white/20 text-[10px] truncate max-w-[180px]">{music.title}</span>
+          )}
+        </div>
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={onToggle}
+          className="text-white/40 hover:text-white/80 text-lg leading-none px-1"
+        >
+          {isOpen ? '\u2014' : '+'}
+        </button>
+      </div>
+
+      {/* Expandable content */}
+      {isOpen && (
+        <div className="bg-black/85 backdrop-blur-md border-l border-r border-b border-white/10 rounded-b-xl shadow-2xl">
+          {isHost && (
+            <div className="flex border-b border-white/10">
               <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={onClose}
-                className="text-white/40 hover:text-white/80 text-lg leading-none px-1"
+                onClick={() => setActiveTab('youtube')}
+                className={`flex-1 text-xs py-2 transition-colors ${activeTab === 'youtube' ? 'text-gold border-b-2 border-gold' : 'text-white/40 hover:text-white/60'}`}
               >
-                {'\u2014'}
+                YouTube
+              </button>
+              <button
+                onClick={() => setActiveTab('playlist')}
+                className={`flex-1 text-xs py-2 transition-colors ${activeTab === 'playlist' ? 'text-gold border-b-2 border-gold' : 'text-white/40 hover:text-white/60'}`}
+              >
+                Playlist
               </button>
             </div>
+          )}
 
-            {isHost && (
-              <div className="flex border-b border-white/10">
+          <div className="p-4 space-y-3">
+            {music ? (
+              <div className="text-center">
+                <p className="text-white/80 text-xs truncate">{music.title}</p>
+                <p className="text-white/25 text-[10px] capitalize mt-0.5">{music.source}</p>
+              </div>
+            ) : (
+              <p className="text-white/30 text-xs text-center">No music playing</p>
+            )}
+
+            <MusicControls
+              playing={music?.playing ?? false}
+              currentTime={music?.currentTime ?? 0}
+              duration={duration}
+              source={music?.source ?? 'youtube'}
+              volume={volume}
+              isHost={isHost}
+              onPlayPause={handlePlayPause}
+              onSeek={handleSeek}
+              onVolumeChange={onVolumeChange}
+            />
+
+            {isHost && activeTab === 'youtube' && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
+                  placeholder="YouTube URL or video ID..."
+                  className="flex-1 bg-white/5 text-white text-xs rounded-lg px-3 py-1.5 border border-white/10 focus:border-gold/50 focus:outline-none placeholder:text-white/20"
+                />
                 <button
-                  onClick={() => setActiveTab('youtube')}
-                  className={`flex-1 text-xs py-2 transition-colors ${activeTab === 'youtube' ? 'text-gold border-b-2 border-gold' : 'text-white/40 hover:text-white/60'}`}
+                  onClick={handleYoutubeSubmit}
+                  className="text-gold text-xs font-semibold hover:text-gold/80 shrink-0 px-2"
                 >
-                  YouTube
-                </button>
-                <button
-                  onClick={() => setActiveTab('playlist')}
-                  className={`flex-1 text-xs py-2 transition-colors ${activeTab === 'playlist' ? 'text-gold border-b-2 border-gold' : 'text-white/40 hover:text-white/60'}`}
-                >
-                  Playlist
+                  Load
                 </button>
               </div>
             )}
 
-            <div className="p-4 space-y-3">
-              {music ? (
-                <div className="text-center">
-                  <p className="text-white/80 text-xs truncate">{music.title}</p>
-                  <p className="text-white/25 text-[10px] capitalize mt-0.5">{music.source}</p>
-                </div>
-              ) : (
-                <p className="text-white/30 text-xs text-center">No music playing</p>
-              )}
-
-              <MusicControls
-                playing={music?.playing ?? false}
-                currentTime={music?.currentTime ?? 0}
-                duration={duration}
-                source={music?.source ?? 'youtube'}
-                volume={volume}
-                isHost={isHost}
-                onPlayPause={handlePlayPause}
-                onSeek={handleSeek}
-                onVolumeChange={onVolumeChange}
-              />
-
-              {isHost && activeTab === 'youtube' && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={youtubeUrl}
-                    onChange={(e) => setYoutubeUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
-                    placeholder="YouTube URL or video ID..."
-                    className="flex-1 bg-white/5 text-white text-xs rounded-lg px-3 py-1.5 border border-white/10 focus:border-gold/50 focus:outline-none placeholder:text-white/20"
-                  />
-                  <button
-                    onClick={handleYoutubeSubmit}
-                    className="text-gold text-xs font-semibold hover:text-gold/80 shrink-0 px-2"
-                  >
-                    Load
-                  </button>
-                </div>
-              )}
-
-              {isHost && activeTab === 'playlist' && (
-                <PlaylistPicker
-                  currentUrl={music?.url ?? ''}
-                  onSelect={handlePlaylistSelect}
-                />
-              )}
-            </div>
-
-            {videoId && (
-              <YoutubePlayer
-                key={videoId}
-                videoId={videoId}
-                playing={music?.playing ?? false}
-                currentTime={music?.currentTime ?? 0}
-                volume={volume}
-                onReady={(d) => setDuration(d)}
-                onTimeUpdate={onTimeUpdate}
-                onEnded={() => {}}
+            {isHost && activeTab === 'playlist' && (
+              <PlaylistPicker
+                currentUrl={music?.url ?? ''}
+                onSelect={handlePlaylistSelect}
               />
             )}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+          </div>
+
+          {videoId && (
+            <YoutubePlayer
+              key={videoId}
+              videoId={videoId}
+              playing={music?.playing ?? false}
+              currentTime={music?.currentTime ?? 0}
+              volume={volume}
+              onReady={(d) => setDuration(d)}
+              onTimeUpdate={onTimeUpdate}
+              onEnded={() => {}}
+            />
+          )}
+        </div>
+      )}
     </div>,
     document.body,
   )

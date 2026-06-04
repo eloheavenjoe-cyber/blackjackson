@@ -568,7 +568,7 @@ export function TablePage() {
           music={game?.music}
           volume={musicVolume}
           isOpen={isMusicOpen}
-          onClose={() => setIsMusicOpen(false)}
+          onToggle={() => setIsMusicOpen(prev => !prev)}
           onCommand={updateMusic}
           onVolumeChange={(v) => { setMusicVolume(v); setVolume(v) }}
           onTimeUpdate={onTimeUpdate}

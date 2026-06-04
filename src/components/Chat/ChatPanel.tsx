@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useDraggable } from '../../hooks/useDraggable'
 import { useChatStore } from '../../stores/chatStore'
 import { ChatMessage } from './ChatMessage'
@@ -95,81 +94,83 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
 
   return createPortal(
     <div
-      className={`fixed z-[60] bg-black/85 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl ${
-        isDragging ? 'cursor-grabbing' : ''
-      }`}
-      style={{ left: position.x, top: position.y, width: 340, height: isOpen ? 420 : 0, overflow: 'hidden' }}
+      className={`fixed z-[60] ${isDragging ? 'cursor-grabbing' : ''}`}
+      style={{ left: position.x, top: position.y, width: 340 }}
     >
-      <AnimatePresence>
-        {isOpen ? (
-          <motion.div
-            key="expanded"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col h-full"
+      {/* Always-visible draggable header bar */}
+      <div
+        className="flex items-center justify-between px-4 py-1.5 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl cursor-grab active:cursor-grabbing select-none shadow-2xl"
+        style={{ borderRadius: isOpen ? '12px 12px 0 0' : '12px' }}
+        {...dragHandlers}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-gold/80 text-xs font-semibold">Chat</span>
+          {!isOpen && (
+            <span className="text-white/20 text-[10px]">
+              {visibleMessages.length > 0 ? `${visibleMessages.length} messages` : 'Click to open'}
+            </span>
+          )}
+        </div>
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-white/40 hover:text-white/80 text-lg leading-none px-1"
+        >
+          {isOpen ? '\u2014' : '+'}
+        </button>
+      </div>
+
+      {/* Expandable content */}
+      {isOpen && (
+        <div
+          className="bg-black/85 backdrop-blur-md border-l border-r border-b border-white/10 rounded-b-xl shadow-2xl flex flex-col"
+          style={{ height: 388 }}
+        >
+          {/* Messages */}
+          <div
+            ref={feedRef}
+            className="flex-1 overflow-y-auto py-2 space-y-0.5"
+            style={{ scrollBehavior: 'smooth' }}
           >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 cursor-grab active:cursor-grabbing select-none"
-              {...dragHandlers}
-            >
-              <span className="text-gold text-sm font-semibold">Chat</span>
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setIsOpen(false)}
-                className="text-white/40 hover:text-white/80 text-lg leading-none px-1"
-              >
-                {'\u2014'}
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div
-              ref={feedRef}
-              className="flex-1 overflow-y-auto py-2 space-y-0.5"
-              style={{ scrollBehavior: 'smooth' }}
-            >
-              {visibleMessages.length === 0 && (
-                <div className="text-center text-white/20 text-xs py-8">
-                  No messages yet
-                </div>
-              )}
-              {visibleMessages.map((msg) => (
-                <ChatMessage key={`${msg.playerId}-${msg.timestamp}`} message={msg} />
-              ))}
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="px-4 py-1 text-red-400 text-xs">{error}</div>
+            {visibleMessages.length === 0 && (
+              <div className="text-center text-white/20 text-xs py-8">
+                No messages yet
+              </div>
             )}
+            {visibleMessages.map((msg) => (
+              <ChatMessage key={`${msg.playerId}-${msg.timestamp}`} message={msg} />
+            ))}
+          </div>
 
-            {/* Input */}
-            <div className="flex items-center gap-2 px-3 py-2 border-t border-white/10">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => { setInput(e.target.value); setError(null) }}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
-                maxLength={280}
-                className="flex-1 bg-white/5 text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 focus:border-gold/50 focus:outline-none placeholder:text-white/20"
-                autoFocus
-              />
-              <button
-                onClick={handleSend}
-                className="text-gold text-sm font-semibold hover:text-gold/80 shrink-0 px-2"
-              >
-                Send
-              </button>
-            </div>
+          {/* Error */}
+          {error && (
+            <div className="px-4 py-1 text-red-400 text-xs">{error}</div>
+          )}
 
-            {/* Emoji bar */}
-            <EmojiBar onEmoji={onSendEmoji} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+          {/* Input */}
+          <div className="flex items-center gap-2 px-3 py-2 border-t border-white/10">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => { setInput(e.target.value); setError(null) }}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              maxLength={280}
+              className="flex-1 bg-white/5 text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 focus:border-gold/50 focus:outline-none placeholder:text-white/20"
+              autoFocus
+            />
+            <button
+              onClick={handleSend}
+              className="text-gold text-sm font-semibold hover:text-gold/80 shrink-0 px-2"
+            >
+              Send
+            </button>
+          </div>
+
+          {/* Emoji bar */}
+          <EmojiBar onEmoji={onSendEmoji} />
+        </div>
+      )}
     </div>,
     document.body,
   )
