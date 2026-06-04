@@ -103,6 +103,7 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onClose, o
             >
               <span className="text-gold text-sm font-semibold">{'\u266A'} Music Player</span>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
                 className="text-white/40 hover:text-white/80 text-lg leading-none px-1"
               >

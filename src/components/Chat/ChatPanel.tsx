@@ -116,6 +116,7 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
             >
               <span className="text-gold text-sm font-semibold">Chat</span>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => setIsOpen(false)}
                 className="text-white/40 hover:text-white/80 text-lg leading-none px-1"
               >

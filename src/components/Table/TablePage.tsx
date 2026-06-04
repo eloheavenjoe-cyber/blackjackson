@@ -554,11 +554,11 @@ export function TablePage() {
         />
       )}
 
-      {!game.gameOver && <ChatToggle onClick={() => useChatStore.getState().setIsOpen(true)} />}
+      {!game.gameOver && <ChatToggle onClick={() => { const s = useChatStore.getState(); s.setIsOpen(!s.isOpen) }} />}
 
       <MusicToggle
         isPlaying={!!(game?.music?.playing)}
-        onClick={() => setIsMusicOpen(true)}
+        onClick={() => setIsMusicOpen(prev => !prev)}
       />
 
       {!game.gameOver && (

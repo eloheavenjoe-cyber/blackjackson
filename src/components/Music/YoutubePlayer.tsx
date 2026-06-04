@@ -21,22 +21,28 @@ export function YoutubePlayer({ videoId, playing, currentTime, volume, onReady, 
   const playerRef = useRef<any>(null)
   const apiLoadedRef = useRef(false)
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const mountedRef = useRef(false)
+
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   const initPlayer = useCallback(() => {
-    if (!window.YT?.Player) return
-    playerRef.current = new window.YT.Player(`yt-player-${videoId}`, {
-      videoId,
-      playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0 },
-      events: {
-        onReady: (e: any) => {
-          onReady(e.target.getDuration())
-          e.target.setVolume(Math.round(volume * 100))
+    if (!window.YT?.Player || !videoId) return
+    try {
+      playerRef.current = new window.YT.Player(`yt-player-${videoId}`, {
+        videoId,
+        playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0 },
+        events: {
+          onReady: (e: any) => {
+            if (!mountedRef.current) return
+            onReady(e.target.getDuration())
+            e.target.setVolume(Math.round(volume * 100))
+          },
+          onStateChange: (e: any) => {
+            if (e.data === 0) onEnded()
+          },
         },
-        onStateChange: (e: any) => {
-          if (e.data === 0) onEnded()
-        },
-      },
-    })
+      })
+    } catch {}
   }, [videoId, volume, onReady, onEnded])
 
   useEffect(() => {
