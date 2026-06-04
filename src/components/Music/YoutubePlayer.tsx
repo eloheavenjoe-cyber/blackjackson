@@ -13,11 +13,12 @@ type Props = {
   currentTime: number
   volume: number
   onReady: (duration: number) => void
+  onMetadata: (data: { title: string; author: string }) => void
   onTimeUpdate: (time: number) => void
   onEnded: () => void
 }
 
-export function YoutubePlayer({ videoId, playing, currentTime, volume, onReady, onTimeUpdate, onEnded }: Props) {
+export function YoutubePlayer({ videoId, playing, currentTime, volume, onReady, onMetadata, onTimeUpdate, onEnded }: Props) {
   const playerRef = useRef<any>(null)
   const apiLoadedRef = useRef(false)
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -36,6 +37,10 @@ export function YoutubePlayer({ videoId, playing, currentTime, volume, onReady, 
             if (!mountedRef.current) return
             onReady(e.target.getDuration())
             e.target.setVolume(Math.round(volume * 100))
+            try {
+              const data = e.target.getVideoData()
+              if (data?.title) onMetadata({ title: data.title, author: data.author || '' })
+            } catch {}
           },
           onStateChange: (e: any) => {
             if (e.data === 0) onEnded()

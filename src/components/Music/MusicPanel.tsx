@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useDraggable } from '../../hooks/useDraggable'
 import { MusicControls } from './MusicControls'
@@ -18,15 +18,54 @@ type Props = {
   onTimeUpdate: (time: number) => void
 }
 
+function loadPanelSize(roomCode: string, defaultW: number, defaultH: number) {
+  try {
+    const saved = localStorage.getItem(`musicPanelSize_${roomCode}`)
+    if (saved) return JSON.parse(saved) as { width: number; height: number }
+  } catch {}
+  return { width: defaultW, height: defaultH }
+}
+
 export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onToggle, onCommand, onVolumeChange, onTimeUpdate }: Props) {
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [activeTab, setActiveTab] = useState<'youtube' | 'playlist'>('youtube')
   const [duration, setDuration] = useState(0)
+  const [localTime, setLocalTime] = useState(0)
 
   const { position, isDragging, dragHandlers } = useDraggable(
     `musicPanelPos_${roomCode}`,
     { x: window.innerWidth - 360, y: 560 },
   )
+
+  const [panelSize, setPanelSize] = useState(() => loadPanelSize(roomCode, 340, 280))
+  const resizeRef = useRef({ startX: 0, startY: 0, startW: 0, startH: 0 })
+  const isResizingRef = useRef(false)
+
+  useEffect(() => {
+    try { localStorage.setItem(`musicPanelSize_${roomCode}`, JSON.stringify(panelSize)) } catch {}
+  }, [panelSize, roomCode])
+
+  const onResizeDown = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    isResizingRef.current = true
+    resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: panelSize.width, startH: panelSize.height }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }, [panelSize])
+
+  const onResizeMove = useCallback((e: React.PointerEvent) => {
+    if (!isResizingRef.current) return
+    const dx = e.clientX - resizeRef.current.startX
+    const dy = e.clientY - resizeRef.current.startY
+    setPanelSize({
+      width: Math.max(240, resizeRef.current.startW + dx),
+      height: Math.max(160, resizeRef.current.startH + dy),
+    })
+  }, [])
+
+  const onResizeUp = useCallback(() => {
+    isResizingRef.current = false
+  }, [])
 
   function handlePlayPause() {
     if (!music) return
@@ -84,12 +123,12 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onToggle, 
   return createPortal(
     <div
       className={`fixed z-[60] ${isDragging ? 'cursor-grabbing' : ''}`}
-      style={{ left: position.x, top: position.y, width: 340 }}
+      style={{ left: position.x, top: position.y, width: panelSize.width }}
     >
       {/* Always-visible draggable header bar */}
       <div
         className="flex items-center justify-between px-4 py-1.5 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl cursor-grab active:cursor-grabbing select-none shadow-2xl"
-        style={{ borderRadius: isOpen ? '12px 12px 0 0' : '12px' }}
+        style={{ borderRadius: isOpen ? '12px 12px 0 0' : '12px', width: panelSize.width }}
         {...dragHandlers}
       >
         <div className="flex items-center gap-2">
@@ -109,7 +148,10 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onToggle, 
 
       {/* Expandable content */}
       {isOpen && (
-        <div className="bg-black/85 backdrop-blur-md border-l border-r border-b border-white/10 rounded-b-xl shadow-2xl">
+        <div
+          className="bg-black/85 backdrop-blur-md border-l border-r border-b border-white/10 rounded-b-xl shadow-2xl relative"
+          style={{ width: panelSize.width }}
+        >
           {isHost && (
             <div className="flex border-b border-white/10">
               <button
@@ -139,7 +181,7 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onToggle, 
 
             <MusicControls
               playing={music?.playing ?? false}
-              currentTime={music?.currentTime ?? 0}
+              currentTime={isHost ? localTime : (music?.currentTime ?? 0)}
               duration={duration}
               source={music?.source ?? 'youtube'}
               volume={volume}
@@ -183,11 +225,29 @@ export function MusicPanel({ roomCode, isHost, music, volume, isOpen, onToggle, 
               playing={music?.playing ?? false}
               currentTime={music?.currentTime ?? 0}
               volume={volume}
-              onReady={(d) => setDuration(d)}
-              onTimeUpdate={onTimeUpdate}
-              onEnded={() => {}}
+              onReady={(d) => {
+                setDuration(d)
+                setLocalTime(0)
+              }}
+              onMetadata={({ title }) => {
+                if (isHost && title) onCommand({ title, lastCommandAt: Date.now() })
+              }}
+              onTimeUpdate={(t) => { onTimeUpdate(t); setLocalTime(t) }}
+              onEnded={() => { onCommand({ playing: false, lastCommandAt: Date.now() }) }}
             />
           )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+            style={{
+              background: 'linear-gradient(135deg, transparent 50%, rgba(212,168,67,0.3) 50%)',
+              borderBottomRightRadius: 12,
+            }}
+            onPointerDown={onResizeDown}
+            onPointerMove={onResizeMove}
+            onPointerUp={onResizeUp}
+          />
         </div>
       )}
     </div>,

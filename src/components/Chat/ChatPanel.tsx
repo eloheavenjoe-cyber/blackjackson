@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useDraggable } from '../../hooks/useDraggable'
 import { useChatStore } from '../../stores/chatStore'
@@ -14,6 +14,14 @@ type Props = {
   onSendTip: (recipientId: string, amount: number) => string | null
 }
 
+function loadPanelSize(roomCode: string, defaultW: number, defaultH: number) {
+  try {
+    const saved = localStorage.getItem(`panelSize_${roomCode}`)
+    if (saved) return JSON.parse(saved) as { width: number; height: number }
+  } catch {}
+  return { width: defaultW, height: defaultH }
+}
+
 export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSendTip }: Props) {
   const { messages, isOpen, setIsOpen, setLastReadTimestamp } = useChatStore()
   const [input, setInput] = useState('')
@@ -24,6 +32,36 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
     `chatPanelPos_${roomCode}`,
     { x: window.innerWidth - 360, y: 120 },
   )
+
+  const [panelSize, setPanelSize] = useState(() => loadPanelSize(roomCode, 340, 420))
+  const resizeRef = useRef({ startX: 0, startY: 0, startW: 0, startH: 0 })
+  const isResizingRef = useRef(false)
+
+  useEffect(() => {
+    try { localStorage.setItem(`panelSize_${roomCode}`, JSON.stringify(panelSize)) } catch {}
+  }, [panelSize, roomCode])
+
+  const onResizeDown = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    isResizingRef.current = true
+    resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: panelSize.width, startH: panelSize.height }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }, [panelSize])
+
+  const onResizeMove = useCallback((e: React.PointerEvent) => {
+    if (!isResizingRef.current) return
+    const dx = e.clientX - resizeRef.current.startX
+    const dy = e.clientY - resizeRef.current.startY
+    setPanelSize({
+      width: Math.max(240, resizeRef.current.startW + dx),
+      height: Math.max(200, resizeRef.current.startH + dy),
+    })
+  }, [])
+
+  const onResizeUp = useCallback(() => {
+    isResizingRef.current = false
+  }, [])
 
   useEffect(() => {
     if (feedRef.current) {
@@ -95,12 +133,12 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
   return createPortal(
     <div
       className={`fixed z-[60] ${isDragging ? 'cursor-grabbing' : ''}`}
-      style={{ left: position.x, top: position.y, width: 340 }}
+      style={{ left: position.x, top: position.y, width: panelSize.width }}
     >
       {/* Always-visible draggable header bar */}
       <div
         className="flex items-center justify-between px-4 py-1.5 bg-black/90 backdrop-blur-md border border-white/10 rounded-xl cursor-grab active:cursor-grabbing select-none shadow-2xl"
-        style={{ borderRadius: isOpen ? '12px 12px 0 0' : '12px' }}
+        style={{ borderRadius: isOpen ? '12px 12px 0 0' : '12px', width: panelSize.width }}
         {...dragHandlers}
       >
         <div className="flex items-center gap-2">
@@ -123,8 +161,8 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
       {/* Expandable content */}
       {isOpen && (
         <div
-          className="bg-black/85 backdrop-blur-md border-l border-r border-b border-white/10 rounded-b-xl shadow-2xl flex flex-col"
-          style={{ height: 388 }}
+          className="bg-black/85 backdrop-blur-md border-l border-r border-b border-white/10 rounded-b-xl shadow-2xl flex flex-col relative"
+          style={{ height: panelSize.height - 32, width: panelSize.width }}
         >
           {/* Messages */}
           <div
@@ -169,6 +207,18 @@ export function ChatPanel({ roomCode, players, onSendMessage, onSendEmoji, onSen
 
           {/* Emoji bar */}
           <EmojiBar onEmoji={onSendEmoji} />
+
+          {/* Resize handle */}
+          <div
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+            style={{
+              background: 'linear-gradient(135deg, transparent 50%, rgba(212,168,67,0.3) 50%)',
+              borderBottomRightRadius: 12,
+            }}
+            onPointerDown={onResizeDown}
+            onPointerMove={onResizeMove}
+            onPointerUp={onResizeUp}
+          />
         </div>
       )}
     </div>,
