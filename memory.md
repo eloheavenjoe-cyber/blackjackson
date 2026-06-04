@@ -84,6 +84,7 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - **Game Over** — full overlay with backdrop blur, redirects to lobby.
 - **Back to Lobby** — resets both gameStore and uiStore before navigating.
 - **Sound** — 9 synthesized sound types via Web Audio API: deal (triangle whoosh), chip (square click), win (ascending C-E-G), lose (descending sawtooth), blackjack (ascending C-E-G-C'), bust (dual-oscillator groan), turn (two-tone chime), shuffle (cascading triangle notes), tick (short sine). Volume slider in `uiStore` via master GainNode, fixed bottom-right corner on all pages. Gated by `soundEnabled` toggle.
+- **Floating panels** — ChatPanel + MusicPanel as draggable/resizable portals (CSS left/top, z-[60]). Collapsible to slim header bars. ChatToggle/MusicToggle FABs at bottom-right (right: 24 and right: 88, bottom: 24). VolumeControl moved to top-4 left-4 to avoid overlap.
 - **Auto-stand on 21** — When a player hits to exactly 21 (not bust), host schedules a delayed auto-stand after 800ms with safety guards (phase/turn/hand validation).
 
 ## Key Engine Functions
@@ -174,19 +175,31 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - ~~Reshuffle animation~~ — Card-wobble banner replacing old pulsing text
 - ~~Quick bet shortcuts~~ — Min/Half/Max pill buttons in BettingArea, greedy chip denomination breakdown via `quickBet()`
 - ~~Auto-stand on 21~~ — 800ms delayed stand after hit-to-21, host-only, with state validation guards
+- ~~VolumeControl overlaps FABs~~ — Moved to top-4 left-4 z-40; FABs at z-[60]
+- ~~Panels off-screen on window resize~~ — useDraggable clamps saved localStorage position to current viewport
+- ~~Collapse buttons broken~~ — Pointer capture stole clicks; added onPointerDown stopPropagation
+- ~~Youtube play crashes app~~ — updateMusic() now merges with current state instead of replacing music field
+- ~~Panel positioning invisible~~ — Switched from framer-motion x/y transforms to CSS left/top
+- ~~Collapsed panels invisible~~ — Now show draggable header bar with [+]/[—] toggle
+- ~~YouTube time updates slow~~ — Host uses local 1s polling; non-host uses Firestore every 10s
+- ~~No video title~~ — YoutubePlayer onMetadata callback fetches title via getVideoData()
 
 ## Known Issues Remaining
 1. **Player disconnect** — No real-time presence detection (Firestore-only, no backend)
-2. **Mobile layout** — Not addressed; draggable panels may not work on touch
+2. **Mobile layout** — Not addressed; draggable/resizable panels may not work on touch
 3. **Firestore rules** — Still in test mode (open access); chat/tips subcollections unprotected
-4. **Chunk size** — Main bundle ~780KB; could use code splitting
-5. **Pixabay playlist URLs** — 6 placeholder URLs in `constants/music.ts` need real working audio file URLs
+4. **Chunk size** — Main bundle ~783KB; could use code splitting
+5. **Pixabay playlist URLs** — 6 placeholder URLs in `constants/music.ts` need real audio file URLs
 6. **No tests for new code** — Chat, music, draggable hook, dealer portrait have zero test coverage
+7. **Dealer SVGs 404 on production** — Image paths use `/dealers/*.svg` but app has basename `/blackjackson`; should be `import.meta.env.BASE_URL + 'dealers/...'`
+8. **YouTube title only fetched for host** — Non-hosts receive title via Firestore sync; if host loads video before other players join, they won't see the title
 
 ## Chat, Music & Dealer Features (2026-06-04)
 
 **Chat System:**
-- Draggable collapsible ChatPanel (portal, glassmorphism, localStorage position)
+- Draggable resizable ChatPanel (CSS `left`/`top` positioning, localStorage position + size)
+- Collapsed state shows slim draggable header bar with `[+]` to reopen — stays visible and draggable
+- ChatToggle FAB toggles open/close (below table, bottom-right)
 - Firestore subcollection `games/{code}/chat/` for messages (4 types: message/tip/emoji/system)
 - `/tip <name> <amount>` command — prefix match, tip intents via `games/{code}/tips/`, host-processed with `FieldValue.increment` for concurrency safety
 - Emoji bar (12 emojis), click sends emoji; floats up from sender's seat on table felt
@@ -194,27 +207,36 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 - Zustand `chatStore`, `useChat` hook, `ChatMessage`, `EmojiBar`, `EmojiFloat` components
 
 **Music Player:**
-- Draggable collapsible MusicPanel (same pattern as chat)
-- YouTube IFrame API (paste URL, host controls play/pause/seek, all clients sync via Firestore `music` field)
-- Baked-in playlist of 6 royalty-free tracks (HTML Audio, drift correction every 5s)
-- Host-only transport controls; non-host sees "Now Playing" + per-player volume
-- Per-player volume slider, MusicToggle FAB with pulse animation
-- `useMusic` hook, `MusicControls`, `YoutubePlayer`, `PlaylistPicker` components
+- Draggable resizable MusicPanel (same pattern as chat, localStorage `musicPanelSize_*`)
+- Collapsed state shows draggable bar with `[+]`/`[—]` toggle and current track title
+- YouTube IFrame API: paste URL, host loads → automatic title fetch via `getVideoData()`, displayed in panel + synced to all players via Firestore
+- Smooth seek bar: host uses local 1s polling time; non-hosts use Firestore `currentTime`
+- Host time sync to Firestore every 10s; non-host clients read via game doc `onSnapshot`
+- `updateMusic()` merges patch with current `music` state (`{...current, ...patch}`) — prevents field wipe
+- Baked-in playlist of 6 tracks (HTML Audio, drift correction every 5s) — placeholder URLs, needs real audio files
+- Host-only transport controls + source tabs; non-host sees "Now Playing" + per-player volume
+- MusicToggle FAB with pulse animation when playing (top-right of ChatToggle)
+- `useMusic` hook, `MusicControls`, `YoutubePlayer` (with `onMetadata` callback), `PlaylistPicker` components
 
 **Dealer Portraits:**
 - 4 personas (default, lady_gold, mr_velvet, the_house), selectable in CreateGameForm
 - DealerArea rewritten: portrait image replaces name/D-icon, cards shifted down
-- SVG placeholders in `public/dealers/`, `DealerPortrait` with onError card-suit fallback
+- SVG placeholders in `public/dealers/`, `DealerPortrait` with onError card-suit fallback and `useEffect` error reset on persona change
 - Stored as `dealerPersona` on GameState, passed through createGame engine
+- **Known bug:** SVGs 404 on production (basename `/blackjackson` not in path). Images resolve to root `/dealers/` instead of `/blackjackson/dealers/`
 
 **New files:** `src/components/Chat/` (5), `src/components/Music/` (5), `src/components/Dealer/` (1), `src/hooks/useDraggable.ts`, `src/hooks/useChat.ts`, `src/hooks/useMusic.ts`, `src/firebase/chat.ts`, `src/firebase/tips.ts`, `src/stores/chatStore.ts`, `src/constants/emojis.ts`, `src/constants/music.ts`, `public/dealers/` (4 SVGs)
 
-**Key decisions:**
+**Key decisions & lessons learned:**
 - Chat messages in subcollection (not game doc array) to keep game doc lean
 - Tip intents follow same two-phase pattern as bet intents
 - Music uses top-level `music` field on GameState (small, atomic reads with game state)
 - Draggable hook shared by both panels via `useDraggable(storageKey, defaultPos)`
-- ChatToggle + MusicToggle both positioned at `bottom: 24`, at `right: 24` and `right: 88`
+- `useDraggable` clamps saved localStorage positions to current viewport on load (prevents off-screen after window resize)
+- Collapse bar button uses `onPointerDown={e => e.stopPropagation()}` to prevent drag capture from stealing the click
+- VolumeControl moved to `top-4 left-4 z-40` to avoid overlapping FAB buttons at bottom-right
+- Panel positioning uses CSS `left`/`top` instead of Framer Motion `x`/`y` transforms (more reliable for portals)
+- Resize via corner drag handle, saved per-panel to localStorage (`panelSize_*`, `musicPanelSize_*`)
 
 ## Polish Todo
 
@@ -229,7 +251,6 @@ Multiplayer Blackjack game for the browser, deployed on GitHub Pages with Fireba
 
 **Misc:**
 - ~~Emoji reactions~~, room code watermark, player join/leave toasts, table color themes
-- Pixabay track URLs in `constants/music.ts` need real working URLs (placeholders currently)
 
 ## Firebase Setup
 
